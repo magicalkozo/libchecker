@@ -1,2 +1,4 @@
+/.vscode
+.gitignore
 clang-format
 run.sh
