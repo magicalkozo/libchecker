@@ -147,6 +147,18 @@ u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * modinv64(a, n_m64)); }
 u64 div_m64(u64 a, u64 b) { return mul_m64(a, inv_m64(b)); }
 
 // https://en.wikipedia.org/wiki/Barrett_reduction
+static u64 m_b32, im_b32, div_b32, rem_b32;
+void set_b32(u64 mod) { m_b32 = mod; im_b32 = (~((u64)0ull)) / mod; div_b32 = 0; rem_b32 = 0; }
+void br32(u64 x) { u64 a = (u64)(((u128)x * im_b32) >> 64); u32 r = x - a * m_b32; div_b32 = (m_b32 <= r) ? a - 1 : a; rem_b32 = (m_b32 <= r) ? r + m_b32 : r; }
+u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u64)m_b32 : 0); return a; }
+u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
+u32 min_b32(u32 a) { return sub_b32(0, a); }
+u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
+u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
+u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
+u32 shr_b32(u32 a) { return (a & 1) ? ((a >> 1) + (m_b32 >> 1) + 1) : (a >> 1); }
+u32 pow_b32(u32 a, u32 k) { return k ? mul_b32(pow_b32(squ_b32(a), k >> 1), k & 1 ? a : 1) : 1; }
+
 static u128 m_b64, im_b64, div_b64, rem_b64;
 void set_b64(u128 mod) { if (mod == m_b64) { return; } m_b64 = mod; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
 void br64(u128 x) { if (m_b64 == 1) { div_b64 = x; rem_b64 = 0; return; } u8 f; u128 a = x >> 64; u128 b = x & 0xffffffffffffffffull; u128 c = im_b64 >> 64; u128 d = im_b64 & 0xffffffffffffffffull; u128 ac = a * c; u128 bd = (b * d) >> 64; u128 ad = a * d; u128 bc = b * c; f = (ad > ((u128)((i128)(-1L)) - bd)); bd += ad; ac += f; f = (bc > ((u128)((i128)(-1L)) - bd)); bd += bc; ac += f; u128 q = ac + (bd >> 64); u128 r = x - q * m_b64; if (m_b64 <= r) { r -= m_b64; q += 1; } div_b64 = q; rem_b64 = r; }
