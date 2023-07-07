@@ -109,6 +109,14 @@ int jacobi_symbol(long long a, long long n) { a %= n; int t = 1; while (a != 0) 
 u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { swap(a, b); } b -= a; } while (b); return a << s; }
 u64 gcd64(u64 a, u64 b) { if (!a || !b) { return a | b; } u64 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { swap(a, b); } b -= a; } while (b); return a << s; }
 
+// a * x + b * y = gcd(a, b)
+typedef struct { i32 a, b; u32 d; } Bezout32;
+Bezout32 bezout32(u32 x, u32 y) { bool swap = x < y; if (swap) { swap(x, y); } if (y == 0) { if (x == 0) { return (Bezout32){0, 0, 0}; } else if (swap) { return (Bezout32){0, 1, x}; } else { return (Bezout32){1, 0, x}; } } i32 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u32 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout32){t1, s1, y}; } else { return (Bezout32){s1, t1, y}; } } i32 s2 = s0 - (i32)(q) * s1, t2 = t0 - (i32)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
+u32 mod_inverse32(u32 x, u32 mod) { Bezout32 abd = bezout32(x, mod); return abd.a < 0 ? mod + abd.a : (u32)abd.a; }
+typedef struct { i64 a, b; u64 d; } Bezout64;
+Bezout64 bezout64(u64 x, u64 y) { bool swap = x < y; if (swap) { swap(x, y); } if (y == 0) { if (x == 0) { return (Bezout64){0, 0, 0}; } else if (swap) { return (Bezout64){0, 1, x}; } else { return (Bezout64){1, 0, x}; } } i64 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u64 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout64){t1, s1, y}; } else { return (Bezout64){s1, t1, y}; } } i64 s2 = s0 - (i64)(q) * s1, t2 = t0 - (i64)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
+u64 mod_inverse64(u64 x, u64 mod) { Bezout64 abd = bezout64(x, mod); return abd.a < 0 ? mod + abd.a : (u64)abd.a; }
+
 // https://ja.wikipedia.org/wiki/%E3%82%B3%E3%83%A0%E3%82%BD%E3%83%BC%E3%83%88#%E6%94%B9%E8%89%AF%E7%89%88%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0
 void combsort11_32(int a_len, u32 *a) { int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { swap(a[i], a[i + g]); flag = 0; } } if (g == 1 && flag) { break; } } }
 void combsort11_64(int a_len, u64 *a) { int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { swap(a[i], a[i + g]); flag = 0; } } if (g == 1 && flag) { break; } } }
@@ -127,7 +135,7 @@ u32 squ_m32(u32 a) { return mr32((u64)a * a); }
 u32 shl_m32(u32 a) { return (a <<= 1) >= n_m32 ? a - n_m32 : a; }
 u32 shr_m32(u32 a) { return (a & 1) ? ((a >> 1) + (n_m32 >> 1) + 1) : (a >> 1); }
 u32 pow_m32(u32 a, u32 k) { return k ? mul_m32(pow_m32(squ_m32(a), k >> 1), k & 1 ? a : r1_m32) : r1_m32; }
-u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * modinv32(a, n_m32)); }
+u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * mod_inverse32(a, n_m32)); }
 u32 div_m32(u32 a, u32 b) { return mul_m32(a, inv_m32(b)); }
 
 static u64 n_m64, n2_m64, ni_m64, r1_m64, r2_m64, r3_m64;
@@ -143,7 +151,7 @@ u64 squ_m64(u64 a) { return mr64((u128)a * a); }
 u64 shl_m64(u64 a) { return (a <<= 1) >= n_m64 ? a - n_m64 : a; }
 u64 shr_m64(u64 a) { return (a & 1) ? ((a >> 1) + (n_m64 >> 1) + 1) : (a >> 1); }
 u64 pow_m64(u64 a, u64 k) { return k ? mul_m64(pow_m64(squ_m64(a), k >> 1), k & 1 ? a : r1_m64) : r1_m64; }
-u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * modinv64(a, n_m64)); }
+u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * mod_inverse64(a, n_m64)); }
 u64 div_m64(u64 a, u64 b) { return mul_m64(a, inv_m64(b)); }
 
 // https://en.wikipedia.org/wiki/Barrett_reduction
