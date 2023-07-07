@@ -34,16 +34,13 @@ typedef __uint128_t   u128;
 typedef   float       f32;
 typedef   double      f64;
 
-#define minimum(a, b) (((a) < (b)) ? (a) : (b))
-#define maximum(a, b) (((a) > (b)) ? (a) : (b))
-#define swap(a, b) ((a) ^= (b) ^= (a) ^= (b))
 
 #define clz32(a) ((a) ? __builtin_clz((a)) : 32)
 #define clz64(a) ((a) ? __builtin_clzll((a)) : 64)
 #define ctz32(a) ((a) ? __builtin_ctz((a)) : 32)
 #define ctz64(a) ((a) ? __builtin_ctzll((a)) : 64)
-#define pct32(a) __builtin_popcount((a))
-#define pct64(a) __builtin_popcountll((a))
+#define pct32(a) (__builtin_popcount((a)))
+#define pct64(a) (__builtin_popcountll((a)))
 #define msb32(a) ((a) ? ((31) - __builtin_clz((a))) : (32))
 #define msb64(a) ((a) ? ((63) - __builtin_clzll((a))) : (64))
 #define bit_width32(a) ((a) ? ((32) - __builtin_clz((a))) : (0))
@@ -106,20 +103,20 @@ f64 xrsr128ss_randf(void) { u64 a = 0x3FF0000000000000ull | (xrsr128ss_rand() >>
 int jacobi_symbol(long long a, long long n) { a %= n; int t = 1; while (a != 0) { while (!(a & 1)) { a >>= 1; int r = n & 7; if (r == 3 || r == 5) { t = -t; } } a ^= n ^= a ^= n; if (((a & 3) == 3) && ((n & 3) == 3)) { t = -t; } a %= n; } return n == 1 ? t : 0; }
 
 // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Algorithm
-u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { swap(a, b); } b -= a; } while (b); return a << s; }
-u64 gcd64(u64 a, u64 b) { if (!a || !b) { return a | b; } u64 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { swap(a, b); } b -= a; } while (b); return a << s; }
+u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 t; u32 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { t = a; a = b; b = t; } b -= a; } while (b); return a << s; }
+u64 gcd64(u64 a, u64 b) { if (!a || !b) { return a | b; } u64 t; u64 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { t = a; a = b; b = t; } b -= a; } while (b); return a << s; }
 
 // a * x + b * y = gcd(a, b)
 typedef struct { i32 a, b; u32 d; } Bezout32;
-Bezout32 bezout32(u32 x, u32 y) { bool swap = x < y; if (swap) { swap(x, y); } if (y == 0) { if (x == 0) { return (Bezout32){0, 0, 0}; } else if (swap) { return (Bezout32){0, 1, x}; } else { return (Bezout32){1, 0, x}; } } i32 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u32 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout32){t1, s1, y}; } else { return (Bezout32){s1, t1, y}; } } i32 s2 = s0 - (i32)(q) * s1, t2 = t0 - (i32)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
+Bezout32 bezout32(u32 x, u32 y) { u32 t; bool swap = x < y; if (swap) { t = x; x = y; y = t; } if (y == 0) { if (x == 0) { return (Bezout32){0, 0, 0}; } else if (swap) { return (Bezout32){0, 1, x}; } else { return (Bezout32){1, 0, x}; } } i32 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u32 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout32){t1, s1, y}; } else { return (Bezout32){s1, t1, y}; } } i32 s2 = s0 - (i32)(q) * s1, t2 = t0 - (i32)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
 u32 mod_inverse32(u32 x, u32 mod) { Bezout32 abd = bezout32(x, mod); return abd.a < 0 ? mod + abd.a : (u32)abd.a; }
 typedef struct { i64 a, b; u64 d; } Bezout64;
-Bezout64 bezout64(u64 x, u64 y) { bool swap = x < y; if (swap) { swap(x, y); } if (y == 0) { if (x == 0) { return (Bezout64){0, 0, 0}; } else if (swap) { return (Bezout64){0, 1, x}; } else { return (Bezout64){1, 0, x}; } } i64 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u64 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout64){t1, s1, y}; } else { return (Bezout64){s1, t1, y}; } } i64 s2 = s0 - (i64)(q) * s1, t2 = t0 - (i64)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
+Bezout64 bezout64(u64 x, u64 y) { u64 t; bool swap = x < y; if (swap) { t = x; x = y; y = t; } if (y == 0) { if (x == 0) { return (Bezout64){0, 0, 0}; } else if (swap) { return (Bezout64){0, 1, x}; } else { return (Bezout64){1, 0, x}; } } i64 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u64 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout64){t1, s1, y}; } else { return (Bezout64){s1, t1, y}; } } i64 s2 = s0 - (i64)(q) * s1, t2 = t0 - (i64)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
 u64 mod_inverse64(u64 x, u64 mod) { Bezout64 abd = bezout64(x, mod); return abd.a < 0 ? mod + abd.a : (u64)abd.a; }
 
 // https://ja.wikipedia.org/wiki/%E3%82%B3%E3%83%A0%E3%82%BD%E3%83%BC%E3%83%88#%E6%94%B9%E8%89%AF%E7%89%88%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0
-void combsort11_32(int a_len, u32 *a) { int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { swap(a[i], a[i + g]); flag = 0; } } if (g == 1 && flag) { break; } } }
-void combsort11_64(int a_len, u64 *a) { int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { swap(a[i], a[i + g]); flag = 0; } } if (g == 1 && flag) { break; } } }
+void combsort11_32(int a_len, u32 *a) { u32 t; int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i]; a[i] = a[i + g]; a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
+void combsort11_64(int a_len, u64 *a) { u64 t; int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i]; a[i] = a[i + g]; a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
 
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
 static u32 n_m32, n2_m32, ni_m32, r1_m32, r2_m32, r3_m32;
