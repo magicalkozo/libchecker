@@ -34,7 +34,6 @@ typedef __uint128_t   u128;
 typedef   float       f32;
 typedef   double      f64;
 
-
 #define clz32(a) ((a) ? __builtin_clz((a)) : 32)
 #define clz64(a) ((a) ? __builtin_clzll((a)) : 64)
 #define ctz32(a) ((a) ? __builtin_ctz((a)) : 32)
@@ -100,7 +99,7 @@ u64 xrsr128ss_range(u64 l, u64 r) { return l + xrsr128ss_rand() % (r - l + 1); }
 f64 xrsr128ss_randf(void) { u64 a = 0x3FF0000000000000ull | (xrsr128ss_rand() >> 12); return (*((f64 *)(&a))) - 1; }
 
 // https://en.wikipedia.org/wiki/Jacobi_symbol
-int jacobi_symbol(long long a, long long n) { a %= n; int t = 1; while (a != 0) { while (!(a & 1)) { a >>= 1; int r = n & 7; if (r == 3 || r == 5) { t = -t; } } a ^= n ^= a ^= n; if (((a & 3) == 3) && ((n & 3) == 3)) { t = -t; } a %= n; } return n == 1 ? t : 0; }
+int jacobi_symbol(long long a, long long n) { long long s; a %= n; int t = 1; while (a != 0) { while (!(a & 1)) { a >>= 1; int r = n & 7; if (r == 3 || r == 5) { t = -t; } } s = a; a = n; n = s; if (((a & 3) == 3) && ((n & 3) == 3)) { t = -t; } a %= n; } return n == 1 ? t : 0; }
 
 // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Algorithm
 u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 t; u32 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { t = a; a = b; b = t; } b -= a; } while (b); return a << s; }
