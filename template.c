@@ -34,12 +34,14 @@ typedef __uint128_t   u128;
 typedef   float       f32;
 typedef   double      f64;
 
-#define clz32(a) ((a) ? __builtin_clz((a)) : 32)
-#define clz64(a) ((a) ? __builtin_clzll((a)) : 64)
-#define ctz32(a) ((a) ? __builtin_ctz((a)) : 32)
-#define ctz64(a) ((a) ? __builtin_ctzll((a)) : 64)
-#define pct32(a) (__builtin_popcount((a)))
-#define pct64(a) (__builtin_popcountll((a)))
+// https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html
+// https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+#define clz32(a) ((a) ? __builtin_clz((a)) : (32))
+#define clz64(a) ((a) ? __builtin_clzll((a)) : (64))
+#define ctz32(a) ((a) ? __builtin_ctz((a)) : (32))
+#define ctz64(a) ((a) ? __builtin_ctzll((a)) : (64))
+#define pct32(a) __builtin_popcount((a))
+#define pct64(a) __builtin_popcountll((a))
 #define msb32(a) ((a) ? ((31) - __builtin_clz((a))) : (32))
 #define msb64(a) ((a) ? ((63) - __builtin_clzll((a))) : (64))
 #define bit_width32(a) ((a) ? ((32) - __builtin_clz((a))) : (0))
@@ -98,26 +100,30 @@ u64 xrsr128ss_rand(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr
 u64 xrsr128ss_range(u64 l, u64 r) { return l + xrsr128ss_rand() % (r - l + 1); }
 f64 xrsr128ss_randf(void) { u64 a = 0x3FF0000000000000ull | (xrsr128ss_rand() >> 12); return (*((f64 *)(&a))) - 1; }
 
+// https://en.wikipedia.org/wiki/Binary_search_algorithm
+u64 kth_root_integer(u64 a, int k) { if (k == 1) { return a; } u64 low = 0; u64 up = 1099511627776ull; while (up - low > 1) { u64 mid = low + ((up - low) >> 1); u128 mypow = 1ull; for (int i = 0; i < k; i++) { ret *= mid; if (ret >> 64) { break; } } if (mypow <= a) { low = mid; } else { up = mid; } } return low; }
+
 // https://en.wikipedia.org/wiki/Jacobi_symbol
-int jacobi_symbol(long long a, long long n) { long long s; a %= n; int t = 1; while (a != 0) { while (!(a & 1)) { a >>= 1; int r = n & 7; if (r == 3 || r == 5) { t = -t; } } s = a; a = n; n = s; if (((a & 3) == 3) && ((n & 3) == 3)) { t = -t; } a %= n; } return n == 1 ? t : 0; }
+int jacobi_symbol(long long a, long long n) { a %= n; int j = 1; long long t; while (a != 0) { while (!(a & 1)) { a >>= 1; int r = n & 7; if (r == 3 || r == 5) { j = -j; } } t = a, a = n, n = t; if (((a & 3) == 3) && ((n & 3) == 3)) { j = -j; } a %= n; } return n == 1 ? j : 0; }
 
 // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Algorithm
-u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 t; u32 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { t = a; a = b; b = t; } b -= a; } while (b); return a << s; }
-u64 gcd64(u64 a, u64 b) { if (!a || !b) { return a | b; } u64 t; u64 s = __builtin_ctz(a | b); a >>= __builtin_ctz(a); do { b >>= __builtin_ctz(b); if (a > b) { t = a; a = b; b = t; } b -= a; } while (b); return a << s; }
+u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 t, s = ctz32(a | b); a >>= ctz32(a); do { b >>= ctz32(b); if (a > b) { t = a, a = b, b = t; } b -= a; } while (b); return a << s; }
+u64 gcd64(u64 a, u64 b) { if (!a || !b) { return a | b; } u64 t, s = ctz64(a | b); a >>= ctz64(a); do { b >>= ctz64(b); if (a > b) { t = a, a = b, b = t; } b -= a; } while (b); return a << s; }
+
+// https://ja.wikipedia.org/wiki/%E3%82%B3%E3%83%A0%E3%82%BD%E3%83%BC%E3%83%88#%E6%94%B9%E8%89%AF%E7%89%88%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0
+void combsort11_32(int a_len, u32 *a) { int g = a_len; u32 t; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i], a[i] = a[i + g], a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
+void combsort11_64(int a_len, u64 *a) { int g = a_len; u64 t; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i], a[i] = a[i + g], a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
 
 // a * x + b * y = gcd(a, b)
 typedef struct { i32 a, b; u32 d; } Bezout32;
 Bezout32 bezout32(u32 x, u32 y) { u32 t; bool swap = x < y; if (swap) { t = x; x = y; y = t; } if (y == 0) { if (x == 0) { return (Bezout32){0, 0, 0}; } else if (swap) { return (Bezout32){0, 1, x}; } else { return (Bezout32){1, 0, x}; } } i32 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u32 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout32){t1, s1, y}; } else { return (Bezout32){s1, t1, y}; } } i32 s2 = s0 - (i32)(q) * s1, t2 = t0 - (i32)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
-u32 mod_inverse32(u32 x, u32 mod) { Bezout32 abd = bezout32(x, mod); return abd.a < 0 ? mod + abd.a : (u32)abd.a; }
+u32 modinv32(u32 x, u32 mod) { Bezout32 abd = bezout32(x, mod); return abd.a < 0 ? mod + abd.a : (u32)abd.a; }
 typedef struct { i64 a, b; u64 d; } Bezout64;
 Bezout64 bezout64(u64 x, u64 y) { u64 t; bool swap = x < y; if (swap) { t = x; x = y; y = t; } if (y == 0) { if (x == 0) { return (Bezout64){0, 0, 0}; } else if (swap) { return (Bezout64){0, 1, x}; } else { return (Bezout64){1, 0, x}; } } i64 s0 = 1, s1 = 0, t0 = 0, t1 = 1; while (true) { u64 q = x / y, r = x % y; if (r == 0) { if (swap) { return (Bezout64){t1, s1, y}; } else { return (Bezout64){s1, t1, y}; } } i64 s2 = s0 - (i64)(q) * s1, t2 = t0 - (i64)(q) * t1; x = y, y = r; s0 = s1, s1 = s2, t0 = t1, t1 = t2; } }
-u64 mod_inverse64(u64 x, u64 mod) { Bezout64 abd = bezout64(x, mod); return abd.a < 0 ? mod + abd.a : (u64)abd.a; }
-
-// https://ja.wikipedia.org/wiki/%E3%82%B3%E3%83%A0%E3%82%BD%E3%83%BC%E3%83%88#%E6%94%B9%E8%89%AF%E7%89%88%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0
-void combsort11_32(int a_len, u32 *a) { u32 t; int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i]; a[i] = a[i + g]; a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
-void combsort11_64(int a_len, u64 *a) { u64 t; int g = a_len; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i]; a[i] = a[i + g]; a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
+u64 modinv64(u64 x, u64 mod) { Bezout64 abd = bezout64(x, mod); return abd.a < 0 ? mod + abd.a : (u64)abd.a; }
 
 // https://en.wikipedia.org/wiki/Montgomery_modular_multiplication#The_REDC_algorithm
+/* mod < 1073741824 */
 static u32 n_m32, n2_m32, ni_m32, r1_m32, r2_m32, r3_m32;
 void set_m32(u32 mod) { if (mod == n_m32) { return; } n_m32 = mod; n2_m32 = mod << 1; ni_m32 = mod; ni_m32 *= 2 - ni_m32 * mod; ni_m32 *= 2 - ni_m32 * mod; ni_m32 *= 2 - ni_m32 * mod; ni_m32 *= 2 - ni_m32 * mod; r1_m32 = (u32)(i32)-1 % mod + 1; r2_m32 = (u64)(i64)-1 % mod + 1; r3_m32 = (u32)(((u64)r1_m32 * (u64)r2_m32) % mod); }
 u32 mr32(u64 a) { u32 y = (u32)(a >> 32) - (u32)(((u64)((u32)a * ni_m32) * n_m32) >> 32); return (i32)y < 0 ? y + n_m32 : y; }
@@ -130,10 +136,11 @@ u32 mul_m32(u32 a, u32 b) { return mr32((u64)a * b); }
 u32 squ_m32(u32 a) { return mr32((u64)a * a); }
 u32 shl_m32(u32 a) { return (a <<= 1) >= n_m32 ? a - n_m32 : a; }
 u32 shr_m32(u32 a) { return (a & 1) ? ((a >> 1) + (n_m32 >> 1) + 1) : (a >> 1); }
-u32 pow_m32(u32 a, u32 k) { return k ? mul_m32(pow_m32(squ_m32(a), k >> 1), k & 1 ? a : r1_m32) : r1_m32; }
-u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * mod_inverse32(a, n_m32)); }
+u32 pow_m32(u32 a, u32 k) { u32 ret = r1_m32, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_m32(ret, a); } a = squ_m32(a); deg >>= 1; } return ret; }
+u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * modinv32(a, n_m32)); }
 u32 div_m32(u32 a, u32 b) { return mul_m32(a, inv_m32(b)); }
 
+/* mod < 4611686018427387904 */
 static u64 n_m64, n2_m64, ni_m64, r1_m64, r2_m64, r3_m64;
 void set_m64(u64 mod) { if (mod == n_m64) { return; } n_m64 = mod; n2_m64 = mod << 1; ni_m64 = mod; ni_m64 *= 2 - ni_m64 * mod; ni_m64 *= 2 - ni_m64 * mod; ni_m64 *= 2 - ni_m64 * mod; ni_m64 *= 2 - ni_m64 * mod; ni_m64 *= 2 - ni_m64 * mod; r1_m64 = (u64)(i64)-1 % mod + 1; r2_m64 = (u128)(i128)-1 % mod + 1; r3_m64 = (u64)(((u128)r1_m64 * (u128)r2_m64) % mod); }
 u64 mr64(u128 a) { u64 y = (u64)(a >> 64) - (u64)(((u128)((u64)a * ni_m64) * n_m64) >> 64); return (i64)y < 0 ? y + n_m64 : y; }
@@ -146,22 +153,22 @@ u64 mul_m64(u64 a, u64 b) { return mr64((u128)a * b); }
 u64 squ_m64(u64 a) { return mr64((u128)a * a); }
 u64 shl_m64(u64 a) { return (a <<= 1) >= n_m64 ? a - n_m64 : a; }
 u64 shr_m64(u64 a) { return (a & 1) ? ((a >> 1) + (n_m64 >> 1) + 1) : (a >> 1); }
-u64 pow_m64(u64 a, u64 k) { return k ? mul_m64(pow_m64(squ_m64(a), k >> 1), k & 1 ? a : r1_m64) : r1_m64; }
-u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * mod_inverse64(a, n_m64)); }
+u64 pow_m64(u64 a, u64 k) { u64 ret = r1_m64, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_m64(ret, a); } a = squ_m64(a); deg >>= 1; } return ret; }
+u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * modinv64(a, n_m64)); }
 u64 div_m64(u64 a, u64 b) { return mul_m64(a, inv_m64(b)); }
 
 // https://en.wikipedia.org/wiki/Barrett_reduction
 static u64 m_b32, im_b32, div_b32, rem_b32;
-void set_b32(u64 mod) { m_b32 = mod; im_b32 = (~((u64)0ull)) / mod; div_b32 = 0; rem_b32 = 0; }
-void br32(u64 x) { u64 a = (u64)(((u128)x * im_b32) >> 64); u32 r = x - a * m_b32; div_b32 = (m_b32 <= r) ? a - 1 : a; rem_b32 = (m_b32 <= r) ? r + m_b32 : r; }
-u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u64)m_b32 : 0); return a; }
+void set_b32(u64 mod) { m_b32 = mod; im_b32 = ((((u128)(1ull) << 64)) + mod - 1) / mod; div_b32 = 0; rem_b32 = 0; }
+void br32(u64 a) { u64 x = (u64)(((u128)(a) * im_b32) >> 64); u64 y = x * m_b32; unsigned long long z; u32 w = __builtin_usubll_overflow(a, y, &z) ? m_b32 : 0; div_b32 = x; rem_b32 = z + w; }
+u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u32)m_b32 : 0); return a; }
 u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
 u32 min_b32(u32 a) { return sub_b32(0, a); }
 u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
 u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
 u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
 u32 shr_b32(u32 a) { return (a & 1) ? ((a >> 1) + (m_b32 >> 1) + 1) : (a >> 1); }
-u32 pow_b32(u32 a, u32 k) { return k ? mul_b32(pow_b32(squ_b32(a), k >> 1), k & 1 ? a : 1) : 1; }
+u32 pow_b32(u32 a, u32 k) { u32 ret = 1u, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_b32(ret, a); } a = squ_b32(a); deg >>= 1; } return ret; }
 
 static u128 m_b64, im_b64, div_b64, rem_b64;
 void set_b64(u128 mod) { if (mod == m_b64) { return; } m_b64 = mod; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
@@ -173,10 +180,35 @@ u64 mul_b64(u64 a, u64 b) { br64((u128)a * b); return (u64)rem_b64; }
 u64 squ_b64(u64 a) { br64((u128)a * a); return (u64)rem_b64; }
 u64 shl_b64(u64 a) { return (a <<= 1) >= m_b64 ? a - m_b64 : a; }
 u64 shr_b64(u64 a) { return (a & 1) ? ((a >> 1) + (m_b64 >> 1) + 1) : (a >> 1); }
-u64 pow_b64(u64 a, u64 k) { return k ? mul_b64(pow_b64(squ_b64(a), k >> 1), k & 1 ? a : 1) : 1; }
+u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_b64(ret, a); } a = squ_b64(a); deg >>= 1; } return ret; }
 
 // clang-format on
 #pragma endregion template
+
+#pragma region fastio
+// clang-format off
+
+#define BUFFER_SIZE 1048576
+char num[10000][4];
+__attribute__((constructor)) void pre(void) { for (int i = 0; i < 10000; i++) { int n = i; for (int j = 3; j >= 0; j--) { num[i][j] = n % 10 | '0'; n /= 10; } } }
+char *ibuf, obuf[BUFFER_SIZE], out[12];
+int ibufi, outi, obufi;
+__attribute__((constructor)) void _c() { struct stat sb; fstat(0, &sb); ibufi = sb.st_size; ibuf = (char *)mmap(0, ibufi, 1, 32769, 0, 0); }
+inline void flush(void) { write(1, obuf, obufi); obufi = 0; }
+void rd_char(char *x) { *x = *ibuf++; }
+void rd_int(int *x) { char c; for (*x = *ibuf++ & 15; (c = *ibuf++) >= '0';) { *x = *x * 10 + (c & 15); } }
+void rd_uint(unsigned *x) { char c; for (*x = *ibuf++ & 15; (c = *ibuf++) >= '0';) { *x = *x * 10 + (c & 15); } }
+void rd_long(long long *x) { char c; for (*x = *ibuf++ & 15; (c = *ibuf++) >= '0';) { *x = *x * 10 + (c & 15); } }
+void rd_ulong(unsigned long long *x) { char c; for (*x = *ibuf++ & 15; (c = *ibuf++) >= '0';) { *x = *x * 10 + (c & 15); } }
+void wt_char(char c) { obuf[obufi++] = c; }
+void wt_ulong(unsigned long long x) { if (obufi > BUFFER_SIZE - 32) { flush(); } if (x >= 1e16) { long long q0 = x / 100000000; int r0 = x % 100000000; int q1 = q0 / 100000000, r1 = q0 % 100000000; if (x >= 1e18) { memcpy(obuf + obufi, num[q1] + 1, 3); memcpy(obuf + obufi + 3, num[r1 / 10000], 4); memcpy(obuf + obufi + 7, num[r1 % 10000], 4); memcpy(obuf + obufi + 11, num[r0 / 10000], 4); memcpy(obuf + obufi + 15, num[r0 % 10000], 4); obufi += 19; } else if (x >= 1e17) { int q2 = (q1 * 103) >> 10; obuf[obufi] = q2 | '0'; obuf[obufi + 1] = (q1 - q2 * 10) | '0'; memcpy(obuf + obufi + 2, num[r1 / 10000], 4); memcpy(obuf + obufi + 6, num[r1 % 10000], 4); memcpy(obuf + obufi + 10, num[r0 / 10000], 4); memcpy(obuf + obufi + 14, num[r0 % 10000], 4); obufi += 18; } else { obuf[obufi] = q1 | '0'; memcpy(obuf + obufi + 1, num[r1 / 10000], 4); memcpy(obuf + obufi + 5, num[r1 % 10000], 4); memcpy(obuf + obufi + 9, num[r0 / 10000], 4); memcpy(obuf + obufi + 13, num[r0 % 10000], 4); obufi += 17; } } else { for (outi = 8; x >= 10000; outi -= 4) { memcpy(out + outi, num[x % 10000], 4); x /= 10000; } if (x >= 1000) { memcpy(obuf + obufi, num[x], 4); obufi += 4; } else if (x >= 100) { memcpy(obuf + obufi, num[x] + 1, 3); obufi += 3; } else if (x >= 10) { int q = (x * 103) >> 10; obuf[obufi] = q | '0'; obuf[obufi + 1] = (x - q * 10) | '0'; obufi += 2; } else { obuf[obufi++] = x | '0'; } memcpy(obuf + obufi, out + outi + 4, 8 - outi); obufi += 8 - outi; } }
+void wt_long(long long x) { if (obufi > BUFFER_SIZE - 32) { flush(); } if (x < 0) { wt_char('-'); x = -x; } wt_ulong(x); }
+void wt_uint(unsigned x) { if (obufi > BUFFER_SIZE - 32) { flush(); } for (outi = 8; x >= 10000; outi -= 4) { memcpy(out + outi, num[x % 10000], 4); x /= 10000; } if (x >= 1000) { memcpy(obuf + obufi, num[x], 4); obufi += 4; } else if (x >= 100) { memcpy(obuf + obufi, num[x] + 1, 3); obufi += 3; } else if (x >= 10) { int q = (x * 103) >> 10; obuf[obufi] = q | '0'; obuf[obufi + 1] = (x - q * 10) | '0'; obufi += 2; } else { obuf[obufi++] = x | '0'; } memcpy(obuf + obufi, out + outi + 4, 8 - outi); obufi += 8 - outi; }
+void wt_int(int x) { if (obufi > BUFFER_SIZE - 32) { flush(); } if (x < 0) { wt_char('-'); x = -x; } wt_uint(x); }
+__attribute__((destructor)) void _d() { flush(); }
+
+// clang-format on
+#pragma endregion fastio
 
 int main(void)
 {
