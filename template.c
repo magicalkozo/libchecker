@@ -104,7 +104,7 @@ f64 xrsr128ss_randf(void) { u64 a = 0x3FF0000000000000ull | (xrsr128ss_rand() >>
 u64 kth_root_integer(u64 a, int k) { if (k == 1) { return a; } u64 low = 0; u64 up = 1099511627776ull; while (up - low > 1) { u64 mid = low + ((up - low) >> 1); u128 mypow = 1ull; for (int i = 0; i < k; i++) { ret *= mid; if (ret >> 64) { break; } } if (mypow <= a) { low = mid; } else { up = mid; } } return low; }
 
 // https://en.wikipedia.org/wiki/Jacobi_symbol
-int jacobi_symbol(long long a, long long n) { a %= n; int j = 1; long long t; while (a != 0) { while (!(a & 1)) { a >>= 1; int r = n & 7; if (r == 3 || r == 5) { j = -j; } } t = a, a = n, n = t; if (((a & 3) == 3) && ((n & 3) == 3)) { j = -j; } a %= n; } return n == 1 ? j : 0; }
+int jacobi_symbol(long long a, long long n) { int j = 1; long long t; while (a) { if (a < 0) { a = -a; if ((n & 3) == 3) { j = -j; } } int s = ctz64(a); a >>= s; if ((((n & 7) == 3) || ((n & 7) == 5)) && (s & 1)) { j = -j; } if ((a & n & 3) == 3) { j = -j; } t = a, a = n, n = t; a %= n; if ((a << 1) > n) { a -= n; } } return n == 1 ? j : 0; }
 
 // https://en.wikipedia.org/wiki/Binary_GCD_algorithm#Algorithm
 u32 gcd32(u32 a, u32 b) { if (!a || !b) { return a | b; } u32 t, s = ctz32(a | b); a >>= ctz32(a); do { b >>= ctz32(b); if (a > b) { t = a, a = b, b = t; } b -= a; } while (b); return a << s; }
