@@ -188,58 +188,11 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg &
 #pragma region miller rabin
 // clang-format off
 
-bool miller_rabin_small(u32 n)
-{
-    set_m32(n);
-    u32 s = ctz32(n - 1);
-    u32 d = (n - 1) >> s;
-    u32 bases[3] = {2u, 7u, 61u};
-    for (int i = 0; i < 3; i++)
-    {
-        if (n <= bases[i]) { return true; }
-        u32 a = pow_m32(to_m32(bases[i]), d);
-        if (a == r1_m32) { continue; }
-        u32 r = 1;
-        while (a != n - r1_m32)
-        {
-            if (r == s) { return false; }
-            a = squ_m32(a);
-            r++;
-        }
-    }
-    return true;
-}
-bool miller_rabin(u64 n)
-{
-    set_m64(n);
-    u64 s = ctz64(n - 1);
-    u64 d = (n - 1) >> s;
-    u64 bases[7] = {2ull, 325ull, 9375ull, 28178ull, 450775ull, 9780504ull, 1795265022ull};
-    for (int i = 0; i < 7; i++)
-    {
-        if (n <= bases[i]) { return true; }
-        u64 a = pow_m64(to_m64(bases[i]), d);
-        if (a == r1_m64) { continue; }
-        u64 r = 1;
-        while (a != n - r1_m64)
-        {
-            if (r == s) { return false; }
-            a = squ_m64(a);
-            r++;
-        }
-    }
-    return true;
-}
+bool miller_rabin_small(u32 n) { set_m32(n); u32 s = ctz32(n - 1); u32 d = (n - 1) >> s; u32 bases[3] = {2u, 7u, 61u}; for (int i = 0; i < 3; i++) { if (n <= bases[i]) { return true; } u32 a = pow_m32(to_m32(bases[i]), d); if (a == r1_m32) { continue; } u32 r = 1; while (a != n - r1_m32) { if (r == s) { return false; } a = squ_m32(a); r++; } } return true; }
+bool miller_rabin(u64 n) { set_m64(n); u64 s = ctz64(n - 1); u64 d = (n - 1) >> s; u64 bases[7] = {2ull, 325ull, 9375ull, 28178ull, 450775ull, 9780504ull, 1795265022ull}; for (int i = 0; i < 7; i++) { if (n <= bases[i]) { return true; } u64 a = pow_m64(to_m64(bases[i]), d); if (a == r1_m64) { continue; } u64 r = 1; while (a != n - r1_m64) { if (r == s) { return false; } a = squ_m64(a); r++; } } return true; }
 
 // n < 2^62
-bool is_prime(u64 n)
-{
-    if (n < 64ull) { return (1ull << n) & 2891462833508853932ull; }
-    if (!(n & 1)) { return false; }
-    if (gcd64(n, 15) != 1ull) { return false; }
-    if (n < 1073741824ull) { return miller_rabin_small((uint32_t)n); }
-    return miller_rabin(n);
-}
+bool is_prime(u64 n) { if (n < 64ull) { return (1ull << n) & 2891462833508853932ull; } if (!(n & 1)) { return false; } if (gcd64(n, 15) != 1ull) { return false; } if (n < 1073741824ull) { return miller_rabin_small((uint32_t)n); } return miller_rabin(n); }
 
 // clang-format on
 #pragma endregion miller rabin
