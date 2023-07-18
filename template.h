@@ -138,7 +138,7 @@ u32 mul_m32(u32 a, u32 b) { return mr32((u64)a * b); }
 u32 squ_m32(u32 a) { return mr32((u64)a * a); }
 u32 shl_m32(u32 a) { return (a <<= 1) >= n_m32 ? a - n_m32 : a; }
 u32 shr_m32(u32 a) { return (a & 1) ? ((a >> 1) + (n_m32 >> 1) + 1) : (a >> 1); }
-u32 pow_m32(u32 a, u32 k) { u32 ret = r1_m32, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_m32(ret, a); } a = squ_m32(a); deg >>= 1; } return ret; }
+u32 pow_m32(u32 a, u64 k) { u32 ret = r1_m32; u64 deg = k; while (deg > 0) { if (deg & 1) { ret = mul_m32(ret, a); } a = squ_m32(a); deg >>= 1; } return ret; }
 u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * modinv32(a, n_m32)); }
 u32 div_m32(u32 a, u32 b) { return mul_m32(a, inv_m32(b)); }
 
@@ -170,7 +170,7 @@ u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
 u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
 u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
 u32 shr_b32(u32 a) { return (a & 1) ? ((a >> 1) + (m_b32 >> 1) + 1) : (a >> 1); }
-u32 pow_b32(u32 a, u32 k) { u32 ret = 1u, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_b32(ret, a); } a = squ_b32(a); deg >>= 1; } return ret; }
+u32 pow_b32(u32 a, u64 k) { u32 ret = 1u; u64 deg = k; while (deg > 0) { if (deg & 1) { ret = mul_b32(ret, a); } a = squ_b32(a); deg >>= 1; } return ret; }
 
 static u128 m_b64, im_b64, div_b64, rem_b64;
 void set_b64(u128 mod) { if (mod == m_b64) { return; } m_b64 = mod; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
