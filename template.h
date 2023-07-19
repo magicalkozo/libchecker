@@ -133,6 +133,8 @@ u32 to_m32(u32 a) { return mr32((u64)a * r2_m32); }
 u32 from_m32(u32 a) { return mr32((u64)a); }
 u32 add_m32(u32 a, u32 b) { a += b; a -= (a >= n_m32 ? n_m32 : 0); return a; }
 u32 sub_m32(u32 a, u32 b) { a += (a < b ? n_m32 : 0); a -= b; return a; }
+u32 shrink_add_m32(u32 a, u32 b) { a += b - n2_m32; a += n2_m32 & -(a >> 31u); return a; }
+u32 shrink_sub_m32(u32 a, u32 b) { a -= b; a += n2_m32 & -(a >> 31u); return a; }
 u32 min_m32(u32 a) { return sub_m32(0, a); }
 u32 mul_m32(u32 a, u32 b) { return mr32((u64)a * b); }
 u32 squ_m32(u32 a) { return mr32((u64)a * a); }
@@ -150,6 +152,8 @@ u64 to_m64(u64 a) { return mr64((u128)a * r2_m64); }
 u64 from_m64(u64 a) { return mr64((u128)a); }
 u64 add_m64(u64 a, u64 b) { a += b; a -= (a >= n_m64 ? n_m64 : 0); return a; }
 u64 sub_m64(u64 a, u64 b) { a += (a < b ? n_m64 : 0); a -= b; return a; }
+u64 shrink_add_m64(u64 a, u64 b) { a += b - n2_m64; a += n2_m64 & -(a >> 63u); return a; }
+u64 shrink_sub_m64(u64 a, u64 b) { a -= b; a += n2_m64 & -(a >> 63u); return a; }
 u64 min_m64(u64 a) { return sub_m64(0, a); }
 u64 mul_m64(u64 a, u64 b) { return mr64((u128)a * b); }
 u64 squ_m64(u64 a) { return mr64((u128)a * a); }
@@ -186,5 +190,3 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg &
 
 // clang-format on
 #pragma endregion template
-
-// gcc main.c -o main -std=c11 -Wall -Wextra -lm -Wno-unknown-pragmas -Wno-strict-aliasing
