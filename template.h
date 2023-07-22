@@ -133,9 +133,10 @@ u32 to_m32(u32 a) { return mr32((u64)a * r2_m32); }
 u32 from_m32(u32 a) { return mr32((u64)a); }
 u32 add_m32(u32 a, u32 b) { a += b; a -= (a >= n_m32 ? n_m32 : 0); return a; }
 u32 sub_m32(u32 a, u32 b) { a += (a < b ? n_m32 : 0); a -= b; return a; }
+u32 min_m32(u32 a) { return sub_m32(0, a); }
 u32 shrink_add_m32(u32 a, u32 b) { a += b - n2_m32; a += n2_m32 & -(a >> 31u); return a; }
 u32 shrink_sub_m32(u32 a, u32 b) { a -= b; a += n2_m32 & -(a >> 31u); return a; }
-u32 min_m32(u32 a) { return sub_m32(0, a); }
+u32 shrink_min_m32(u32 a) { return shrink_sub_m32(0, a); }
 u32 mul_m32(u32 a, u32 b) { return mr32((u64)a * b); }
 u32 squ_m32(u32 a) { return mr32((u64)a * a); }
 u32 shl_m32(u32 a) { return (a <<= 1) >= n_m32 ? a - n_m32 : a; }
@@ -152,9 +153,10 @@ u64 to_m64(u64 a) { return mr64((u128)a * r2_m64); }
 u64 from_m64(u64 a) { return mr64((u128)a); }
 u64 add_m64(u64 a, u64 b) { a += b; a -= (a >= n_m64 ? n_m64 : 0); return a; }
 u64 sub_m64(u64 a, u64 b) { a += (a < b ? n_m64 : 0); a -= b; return a; }
+u64 min_m64(u64 a) { return sub_m64(0, a); }
 u64 shrink_add_m64(u64 a, u64 b) { a += b - n2_m64; a += n2_m64 & -(a >> 63u); return a; }
 u64 shrink_sub_m64(u64 a, u64 b) { a -= b; a += n2_m64 & -(a >> 63u); return a; }
-u64 min_m64(u64 a) { return sub_m64(0, a); }
+u64 shrink_min_m64(u64 a) { return shrink_sub_m64(0, a); }
 u64 mul_m64(u64 a, u64 b) { return mr64((u128)a * b); }
 u64 squ_m64(u64 a) { return mr64((u128)a * a); }
 u64 shl_m64(u64 a) { return (a <<= 1) >= n_m64 ? a - n_m64 : a; }
@@ -164,24 +166,30 @@ u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * modinv64(a, n_m64)); }
 u64 div_m64(u64 a, u64 b) { return mul_m64(a, inv_m64(b)); }
 
 // https://en.wikipedia.org/wiki/Barrett_reduction
-static u64 m_b32, im_b32, div_b32, rem_b32;
-void set_b32(u64 mod) { m_b32 = mod; im_b32 = ((((u128)(1ull) << 64)) + mod - 1) / mod; div_b32 = 0; rem_b32 = 0; }
+static u64 m_b32, m2_b32, im_b32, div_b32, rem_b32;
+void set_b32(u64 mod) { if (mod == m_b32) { return; } m_b32 = mod; m2_b32 = mod << 1; im_b32 = ((((u128)(1ull) << 64)) + mod - 1) / mod; div_b32 = 0; rem_b32 = 0; }
 void br32(u64 a) { u64 x = (u64)(((u128)(a) * im_b32) >> 64); u64 y = x * m_b32; unsigned long long z; u32 w = __builtin_usubll_overflow(a, y, &z) ? m_b32 : 0; div_b32 = x; rem_b32 = z + w; }
 u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u32)m_b32 : 0); return a; }
 u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
 u32 min_b32(u32 a) { return sub_b32(0, a); }
+u32 shrink_add_b32(u32 a, u32 b) { a += b - n2_m32; a += n2_m32 & -(a >> 31u); return a; }
+u32 shrink_sub_b32(u32 a, u32 b) { a -= b; a += n2_m32 & -(a >> 31u); return a; }
+u32 shrink_min_b32(u32 a) { return shrink_sub_m32(0, a); }
 u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
 u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
 u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
 u32 shr_b32(u32 a) { return (a & 1) ? ((a >> 1) + (m_b32 >> 1) + 1) : (a >> 1); }
 u32 pow_b32(u32 a, u64 k) { u32 ret = 1u; u64 deg = k; while (deg > 0) { if (deg & 1) { ret = mul_b32(ret, a); } a = squ_b32(a); deg >>= 1; } return ret; }
 
-static u128 m_b64, im_b64, div_b64, rem_b64;
-void set_b64(u128 mod) { if (mod == m_b64) { return; } m_b64 = mod; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
+static u128 m_b64, m2_b64, im_b64, div_b64, rem_b64;
+void set_b64(u128 mod) { if (mod == m_b64) { return; } m_b64 = mod; m2_b64 = mod << 1; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
 void br64(u128 x) { if (m_b64 == 1) { div_b64 = x; rem_b64 = 0; return; } u8 f; u128 a = x >> 64; u128 b = x & 0xffffffffffffffffull; u128 c = im_b64 >> 64; u128 d = im_b64 & 0xffffffffffffffffull; u128 ac = a * c; u128 bd = (b * d) >> 64; u128 ad = a * d; u128 bc = b * c; f = (ad > ((u128)((i128)(-1L)) - bd)); bd += ad; ac += f; f = (bc > ((u128)((i128)(-1L)) - bd)); bd += bc; ac += f; u128 q = ac + (bd >> 64); u128 r = x - q * m_b64; if (m_b64 <= r) { r -= m_b64; q += 1; } div_b64 = q; rem_b64 = r; }
 u64 add_b64(u64 a, u64 b) { a += b; a -= (a >= (u64)m_b64 ? (u64)m_b64 : 0); return a; }
 u64 sub_b64(u64 a, u64 b) { a += (a < b ? (u64)m_b64 : 0); a -= b; return a; }
 u64 min_b64(u64 a) { return sub_b64(0, a); }
+u64 shrink_add_b64(u64 a, u64 b) { a += b - m2_b64; a += m2_b64 & -(a >> 63u); return a; }
+u64 shrink_sub_b64(u64 a, u64 b) { a -= b; a += m2_b64 & -(a >> 63u); return a; }
+u64 shrink_min_b64(u64 a) { return shrink_sub_b64(0, a); }
 u64 mul_b64(u64 a, u64 b) { br64((u128)a * b); return (u64)rem_b64; }
 u64 squ_b64(u64 a) { br64((u128)a * a); return (u64)rem_b64; }
 u64 shl_b64(u64 a) { return (a <<= 1) >= m_b64 ? a - m_b64 : a; }
