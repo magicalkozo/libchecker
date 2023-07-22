@@ -16,7 +16,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: Accessible
         run: chmod +x run.sh
-      - name: Build
+      - name: Build and Test
         run: ./run.sh
-      - name: Test
-        run: make test
