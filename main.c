@@ -8,7 +8,7 @@ int main(void)
     {
         a = pcg_range(0, 998244352u);
         b = pcg_range(0, 998244352u);
-        assert(add_m32(a, b), (a + b) % 998244353u);
+        assert(add_m32(a, b) == (a + b) % 998244353u);
     }
     return 0;
 }
