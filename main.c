@@ -2,7 +2,13 @@
 
 int main(void)
 {
-    u32 a = pcg_range(1, 10);
-    assert(a > 100);
+    set_m32(998244353u);
+    u32 a, b;
+    for (int _ = 0; _ < 10000000000; _++)
+    {
+        a = pcg_range(0, 998244352u);
+        b = pcg_range(0, 998244352u);
+        assert(add_m32(a, b), (a + b) % 998244353u);
+    }
     return 0;
 }
