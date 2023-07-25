@@ -1,10 +1,11 @@
 #pragma region template
 // clang-format off
 
-#pragma GCC optimize("O3")
-#pragma GCC target("avx2")
-#pragma GCC optimize("fast-math")
-#pragma GCC optimize("unroll-loops")
+#pragma region omajinai
+
+#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx512f")
 
 #define _GNU_SOURCE
 #include <assert.h>
@@ -59,6 +60,10 @@ u64 rotr64(u64 x, i64 r) { if (r < 0) { u64 l = ((u64)(-r)) % 64; return x << l 
 u32 rotl32(u32 x, i64 r) { return rotr32(x, -r); }
 u64 rotl64(u64 x, i64 r) { return rotr64(x, -r); }
 
+#pragma endregion omajinai
+
+#pragma region in out
+
 u32 in_u32(void) { u32 c, x = 0; while (c = getchar_unlocked(), c < '0' || c > '9') {} while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return x; }
 u64 in_u64(void) { u64 c, x = 0; while (c = getchar_unlocked(), c < '0' || c > '9') {} while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return x; }
 u128 in_u128(void) { u128 c, x = 0; while (c = getchar_unlocked(), c < '0' || c > '9') {} while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return x; }
@@ -76,29 +81,41 @@ void space(void) { putchar_unlocked(' '); }
 void printb_32bit(u32 v) { u32 mask = (u32)1 << (sizeof(v) * CHAR_BIT - 1); do { putchar_unlocked(mask & v ? '1' : '0'); } while (mask >>= 1); }
 void printb_64bit(u64 v) { u64 mask = (u64)1 << (sizeof(v) * CHAR_BIT - 1); do { putchar_unlocked(mask & v ? '1' : '0'); } while (mask >>= 1); }
 
+#pragma endregion in out
+
+#pragma region Random Number Generator
+
 // https://en.wikipedia.org/wiki/Linear_congruential_generator
 u32 lcg_rand(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
 u32 lcg_range(u32 l, u32 r) { return l + lcg_rand() % (r - l + 1); }
 f32 lcg_randf(void) { u32 a = 0x3F800000u | (lcg_rand() >> 9); return (*((f32 *)(&a))) - 1; }
+
 // https://en.wikipedia.org/wiki/Permuted_congruential_generator
 // https://www.pcg-random.org/index.html
 u32 pcg_rand(void) { static u64 pcg_state = 0x853c49e6748fea9bull; u64 t = pcg_state; pcg_state = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull; u32 sh = ((t >> 18u) ^ t) >> 27u; u32 ro = t >> 59u; return (sh >> ro) | (sh << ((-ro) & 31)); }
 u32 pcg_range(u32 l, u32 r) { return l + pcg_rand() % (r - l + 1); }
 f32 pcg_randf(void) { u32 a = 0x3F800000u | (pcg_rand() >> 9); return (*((f32 *)(&a))) - 1; }
+
 // https://en.wikipedia.org/wiki/Middle-square_method
 // https://doi.org/10.48550/arXiv.1704.00358
 u64 msws_rand(void) { static u64 msws_state1 = 0; static u64 msws_state2 = 0; static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul; static u64 msws_state4 = 0; static u64 msws_state5 = 0; static u64 msws_state6 = 0x278c5a4d8419fe6bul; u64 ret; msws_state1 *= msws_state1; ret = msws_state1 += (msws_state2 += msws_state3); msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32); msws_state4 *= msws_state4; msws_state4 += (msws_state5 += msws_state6); msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32); return ret ^ msws_state4; }
 u64 msws_range(u64 l, u64 r) { return l + msws_rand() % (r - l + 1); }
 f64 msws_randf(void) { u64 a = 0x3FF0000000000000ull | (msws_rand() >> 12); return (*((f64 *)(&a))) - 1; }
+
 // https://ja.wikipedia.org/wiki/Xorshift
 // https://prng.di.unimi.it/xoroshiro128plus.c
 u64 xrsr128p_rand(void) { static u64 xrsr128p_state1 = 0x1ull; static u64 xrsr128p_state2 = 0x2ull; const u64 s0 = xrsr128p_state1; u64 s1 = xrsr128p_state2; const u64 ret = s0 + s1; s1 ^= s0; xrsr128p_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16); xrsr128p_state2 = rotl64(s1, 37); return ret; }
 u64 xrsr128p_range(u64 l, u64 r) { return l + xrsr128p_rand() % (r - l + 1); }
 f64 xrsr128p_randf(void) { u64 a = 0x3FF0000000000000ull | (xrsr128p_rand() >> 12); return (*((f64 *)(&a))) - 1; }
+
 // https://prng.di.unimi.it/xoroshiro128starstar.c
 u64 xrsr128ss_rand(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr128ss_state2 = 0x2ull; const u64 s0 = xrsr128ss_state1; u64 s1 = xrsr128ss_state2; const u64 ret = rotl64(s0 * 5, 7) * 9; s1 ^= s0; xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16); xrsr128ss_state2 = rotl64(s1, 37); return ret; }
 u64 xrsr128ss_range(u64 l, u64 r) { return l + xrsr128ss_rand() % (r - l + 1); }
 f64 xrsr128ss_randf(void) { u64 a = 0x3FF0000000000000ull | (xrsr128ss_rand() >> 12); return (*((f64 *)(&a))) - 1; }
+
+#pragma endregion Random Number Generator
+
+#pragma region utils
 
 // power with upperbound
 u64 saturate_pow_u64(u64 x, u64 y) { if (y == 0) { return 1ull; } u64 res = 1ull; while (y) { if (y & 1) { res = __builtin_mul_overflow_p(res, x, (u64)0) ? UINT64_MAX : res * x; } x = __builtin_mul_overflow_p(x, x, (u64)0) ? UINT64_MAX : x * x; y >>= 1; } return res; }
@@ -115,6 +132,10 @@ u64 gcd64(u64 a, u64 b) { if (!a || !b) { return a | b; } u64 t, s = ctz64(a | b
 // https://ja.wikipedia.org/wiki/%E3%82%B3%E3%83%A0%E3%82%BD%E3%83%BC%E3%83%88#%E6%94%B9%E8%89%AF%E7%89%88%E3%82%A2%E3%83%AB%E3%82%B4%E3%83%AA%E3%82%BA%E3%83%A0
 void combsort11_32(int a_len, u32 *a) { int g = a_len; u32 t; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i], a[i] = a[i + g], a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
 void combsort11_64(int a_len, u64 *a) { int g = a_len; u64 t; while (true) { int flag = 1; g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; if (g == 9 || g == 10) { g = 11; } for (int i = 0; i + g < a_len; i++) { if (a[i] > a[i + g]) { t = a[i], a[i] = a[i + g], a[i + g] = t; flag = 0; } } if (g == 1 && flag) { break; } } }
+
+#pragma endregion utils
+
+#pragma region modint
 
 // a * x + b * y = gcd(a, b)
 typedef struct { i32 a, b; u32 d; } Bezout32;
@@ -196,5 +217,169 @@ u64 shl_b64(u64 a) { return (a <<= 1) >= m_b64 ? a - m_b64 : a; }
 u64 shr_b64(u64 a) { return (a & 1) ? ((a >> 1) + (m_b64 >> 1) + 1) : (a >> 1); }
 u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg & 1) { ret = mul_b64(ret, a); } a = squ_b64(a); deg >>= 1; } return ret; }
 
+#pragma endregion modint
+
 // clang-format on
 #pragma endregion template
+
+#pragma region Fast IO
+// clang-format off
+
+#pragma region Fast Input
+
+static char *input_data;
+static struct stat input_stat;
+static int input_fd;
+static int input_size;
+__attribute__((constructor)) void _read_from_stdin_(void)
+{
+    input_fd = 0;
+    fstat(input_fd, &input_stat);
+    input_size = input_stat.st_size + 64;
+    input_data = (char *)mmap(0, input_stat.st_size + 64, PROT_READ, MAP_SHARED | MAP_POPULATE, input_fd, 0);
+    if (input_data == MAP_FAILED)
+    {
+        __builtin_trap();
+    }
+    madvise(input_data, input_size, MADV_SEQUENTIAL);
+}
+__attribute__((destructor)) void _destruct_read_(void)
+{
+    munmap(input_data, input_size);
+    input_size = 0;
+}
+#define READ_NUMBER                                                \
+        char c;                                                    \
+        for (*x = *input_data++ & 15; (c = *input_data++) >= '0';) \
+        {                                                          \
+            *x = *x * 10 + (c & 15);                               \
+        }
+void rd_int(int *x) { READ_NUMBER }
+void rd_uint(unsigned *x) { READ_NUMBER }
+void rd_ll(long long *x) { READ_NUMBER }
+void rd_ull(unsigned long long *x) { READ_NUMBER }
+void rd_i32(i32 *x) { READ_NUMBER }
+void rd_u32(u32 *x) { READ_NUMBER }
+void rd_i64(i64 *x) { READ_NUMBER }
+void rd_u64(u64 *x) { READ_NUMBER }
+#undef READ_NUMBER
+
+#pragma endregion Fast Input
+
+#pragma region Fast Output
+
+#define output_buf_size 262144
+#define output_integer_size 20
+#define output_block_size 10000
+static char output_buf[output_buf_size + 1];
+static char output_block_str[output_buf_size * 4 + 1];
+static u64 power10[] = { 1ull, 10ull, 100ull, 1000ull, 10000ull, 100000ull, 1000000ull, 10000000ull, 100000000ull, 1000000000ull, 10000000000ull, 100000000000ull, 1000000000000ull, 10000000000000ull, 100000000000000ull, 1000000000000000ull, 10000000000000000ull, 100000000000000000ull, 1000000000000000000ull, 10000000000000000000ull };
+static size_t pos;
+__attribute__((constructor)) void _write_constructor_(void)
+{
+    pos = 0;
+    for (size_t i = 0; i < output_block_size; i++)
+    {
+        size_t j = 4, k = i;
+        while (j--)
+        {
+            output_block_str[i * 4 + j] = k % 10 + '0';
+            k /= 10;
+        }
+    }
+}
+void flush()
+{
+    fwrite(output_buf, 1, pos, stdout);
+    pos = 0;
+}
+size_t get_integer_size(u64 n)
+{
+    if (n >= power10[10])
+    {
+        if (n >= power10[19]) return 20;
+        if (n >= power10[18]) return 19;
+        if (n >= power10[17]) return 18;
+        if (n >= power10[16]) return 17;
+        if (n >= power10[15]) return 16;
+        if (n >= power10[14]) return 15;
+        if (n >= power10[13]) return 14;
+        if (n >= power10[12]) return 13;
+        if (n >= power10[11]) return 12;
+        return 11;
+    }
+    else
+    {
+        if (n >= power10[9]) return 10;
+        if (n >= power10[8]) return 9;
+        if (n >= power10[7]) return 8;
+        if (n >= power10[6]) return 7;
+        if (n >= power10[5]) return 6;
+        if (n >= power10[4]) return 5;
+        if (n >= power10[3]) return 4;
+        if (n >= power10[2]) return 3;
+        if (n >= power10[1]) return 2;
+        return 1;
+    }
+}
+void wtn(void)
+{
+    output_buf[pos++] = '\n';
+    if (__builtin_expect(pos == output_buf_size, 0))
+        flush();
+}
+void wts(void)
+{
+    output_buf[pos++] = ' ';
+    if (__builtin_expect(pos == output_buf_size, 0))
+        flush();
+}
+void wt_char(char c)
+{
+    output_buf[pos++] = c;
+    if (__builtin_expect(pos == output_buf_size, 0))
+        flush();
+}
+void wt_str(const char *s)
+{
+    while (*s != 0)
+    {
+        output_buf[pos++] = *s++;
+        if (__builtin_expect(pos == output_buf_size, 0))
+            flush();
+    }
+}
+#define WRITE_NUMBER                                                                       \
+    if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                 \
+        flush();                                                                           \
+    if (x < 0)                                                                             \
+        wt_char('-'), x = -x;                                                                \
+    size_t digit = get_integer_size(x);                                                    \
+    size_t len = digit;                                                                    \
+    while (len >= 4)                                                                       \
+    {                                                                                      \
+        len -= 4;                                                                          \
+        memcpy(output_buf + pos + len, output_block_str + (x % output_block_size) * 4, 4); \
+        x /= output_block_size;                                                            \
+    }                                                                                      \
+    memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                   \
+    pos += digit;
+void wt_int(int x) { WRITE_NUMBER }
+void wt_uint(unsigned x) { WRITE_NUMBER }
+void wt_ll(long long x) { WRITE_NUMBER }
+void wt_ull(unsigned long long x) { WRITE_NUMBER }
+void wt_i32(i32 x) { WRITE_NUMBER }
+void wt_u32(u32 x) { WRITE_NUMBER }
+void wt_i64(i64 x) { WRITE_NUMBER }
+void wt_u64(u64 x) { WRITE_NUMBER }
+__attribute__((destructor)) void _write_destructor_(void)
+{
+    flush();
+    pos = 0;
+}
+#undef WRITE_NUMBER
+
+#pragma endregion Fast Output
+
+// clang-format on
+#pragma endregion Fast IO
