@@ -222,6 +222,7 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg &
 // clang-format on
 #pragma endregion template
 
+#ifdef GITHUB_ACTIONS
 #pragma region Fast IO
 // clang-format off
 
@@ -398,3 +399,5 @@ __attribute__((destructor)) void _write_destructor_(void)
 
 // clang-format on
 #pragma endregion Fast IO
+
+#endif // GITHUB_ACTIONS
