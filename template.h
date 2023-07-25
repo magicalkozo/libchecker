@@ -4,8 +4,8 @@
 #pragma region omajinai
 
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-#pragma GCC target("avx512f")
+// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+// #pragma GCC target("avx512f")
 
 #define _GNU_SOURCE
 #include <assert.h>
@@ -349,7 +349,7 @@ void wt_str(const char *s)
             flush();
     }
 }
-#define WRITE_NUMBER                                                                       \
+#define WRITE_SIGN_NUMBER                                                                       \
     if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                 \
         flush();                                                                           \
     if (x < 0)                                                                             \
@@ -364,20 +364,34 @@ void wt_str(const char *s)
     }                                                                                      \
     memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                   \
     pos += digit;
-void wt_int(int x) { WRITE_NUMBER }
-void wt_uint(unsigned x) { WRITE_NUMBER }
-void wt_ll(long long x) { WRITE_NUMBER }
-void wt_ull(unsigned long long x) { WRITE_NUMBER }
-void wt_i32(i32 x) { WRITE_NUMBER }
-void wt_u32(u32 x) { WRITE_NUMBER }
-void wt_i64(i64 x) { WRITE_NUMBER }
-void wt_u64(u64 x) { WRITE_NUMBER }
+#define WRITE_UNSIGN_NUMBER                                                                \
+    if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                 \
+        flush();                                                                           \
+    size_t digit = get_integer_size(x);                                                    \
+    size_t len = digit;                                                                    \
+    while (len >= 4)                                                                       \
+    {                                                                                      \
+        len -= 4;                                                                          \
+        memcpy(output_buf + pos + len, output_block_str + (x % output_block_size) * 4, 4); \
+        x /= output_block_size;                                                            \
+    }                                                                                      \
+    memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                   \
+    pos += digit;
+void wt_int(int x) { WRITE_SIGN_NUMBER }
+void wt_ll(long long x) { WRITE_SIGN_NUMBER }
+void wt_i32(i32 x) { WRITE_SIGN_NUMBER }
+void wt_i64(i64 x) { WRITE_SIGN_NUMBER }
+void wt_uint(unsigned x) { WRITE_UNSIGN_NUMBER }
+void wt_ull(unsigned long long x) { WRITE_UNSIGN_NUMBER }
+void wt_u32(u32 x) { WRITE_UNSIGN_NUMBER }
+void wt_u64(u64 x) { WRITE_UNSIGN_NUMBER }
 __attribute__((destructor)) void _write_destructor_(void)
 {
     flush();
     pos = 0;
 }
 #undef WRITE_NUMBER
+#undef WRITE_UNSIGN_NUMBER
 
 #pragma endregion Fast Output
 
