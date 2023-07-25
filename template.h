@@ -223,6 +223,7 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg &
 #pragma endregion template
 
 #ifdef GITHUB_ACTIONS
+
 #pragma region Fast IO
 // clang-format off
 
@@ -232,7 +233,7 @@ static char *input_data;
 static struct stat input_stat;
 static int input_fd;
 static int input_size;
-__attribute__((constructor)) void _read_from_stdin_(void)
+__attribute__((constructor)) void _constructor_read_(void)
 {
     input_fd = 0;
     fstat(input_fd, &input_stat);
@@ -244,11 +245,11 @@ __attribute__((constructor)) void _read_from_stdin_(void)
     }
     madvise(input_data, input_size, MADV_SEQUENTIAL);
 }
-#define READ_NUMBER                                                \
-        char c;                                                    \
-        for (*x = *input_data++ & 15; (c = *input_data++) >= '0';) \
-        {                                                          \
-            *x = *x * 10 + (c & 15);                               \
+#define READ_NUMBER                                                 \
+        char c;                                                     \
+        for (*x = *input_data++ & 15; (c = *input_data++) >= '0';)  \
+        {                                                           \
+            *x = *x * 10 + (c & 15);                                \
         }
 void rd_int(int *x) { READ_NUMBER }
 void rd_uint(unsigned *x) { READ_NUMBER }
@@ -351,33 +352,33 @@ void wt_str(const char *s)
             flush();
     }
 }
-#define WRITE_SIGN_NUMBER                                                                       \
-    if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                 \
-        flush();                                                                           \
-    if (x < 0)                                                                             \
-        wt_char('-'), x = -x;                                                                \
-    size_t digit = get_integer_size(x);                                                    \
-    size_t len = digit;                                                                    \
-    while (len >= 4)                                                                       \
-    {                                                                                      \
-        len -= 4;                                                                          \
-        memcpy(output_buf + pos + len, output_block_str + (x % output_block_size) * 4, 4); \
-        x /= output_block_size;                                                            \
-    }                                                                                      \
-    memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                   \
+#define WRITE_SIGN_NUMBER                                                                   \
+    if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                  \
+        flush();                                                                            \
+    if (x < 0)                                                                              \
+        wt_char('-'), x = -x;                                                               \
+    size_t digit = get_integer_size(x);                                                     \
+    size_t len = digit;                                                                     \
+    while (len >= 4)                                                                        \
+    {                                                                                       \
+        len -= 4;                                                                           \
+        memcpy(output_buf + pos + len, output_block_str + (x % output_block_size) * 4, 4);  \
+        x /= output_block_size;                                                             \
+    }                                                                                       \
+    memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                    \
     pos += digit;
-#define WRITE_UNSIGN_NUMBER                                                                \
-    if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                 \
-        flush();                                                                           \
-    size_t digit = get_integer_size(x);                                                    \
-    size_t len = digit;                                                                    \
-    while (len >= 4)                                                                       \
-    {                                                                                      \
-        len -= 4;                                                                          \
-        memcpy(output_buf + pos + len, output_block_str + (x % output_block_size) * 4, 4); \
-        x /= output_block_size;                                                            \
-    }                                                                                      \
-    memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                   \
+#define WRITE_UNSIGN_NUMBER                                                                 \
+    if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                  \
+        flush();                                                                            \
+    size_t digit = get_integer_size(x);                                                     \
+    size_t len = digit;                                                                     \
+    while (len >= 4)                                                                        \
+    {                                                                                       \
+        len -= 4;                                                                           \
+        memcpy(output_buf + pos + len, output_block_str + (x % output_block_size) * 4, 4);  \
+        x /= output_block_size;                                                             \
+    }                                                                                       \
+    memcpy(output_buf + pos, output_block_str + x * 4 + (4 - len), len);                    \
     pos += digit;
 void wt_int(int x) { WRITE_SIGN_NUMBER }
 void wt_ll(long long x) { WRITE_SIGN_NUMBER }
@@ -392,7 +393,7 @@ __attribute__((destructor)) void _write_destructor_(void)
     flush();
     pos = 0;
 }
-#undef WRITE_NUMBER
+#undef WRITE_SIGN_NUMBER
 #undef WRITE_UNSIGN_NUMBER
 
 #pragma endregion Fast Output
