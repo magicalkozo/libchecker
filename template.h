@@ -4,8 +4,8 @@
 #pragma region omajinai
 
 #pragma GCC optimize("O3,unroll-loops")
-// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-// #pragma GCC target("avx512f")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx512f")
 
 #define _GNU_SOURCE
 #include <assert.h>
@@ -243,11 +243,6 @@ __attribute__((constructor)) void _read_from_stdin_(void)
     }
     madvise(input_data, input_size, MADV_SEQUENTIAL);
 }
-__attribute__((destructor)) void _destruct_read_(void)
-{
-    munmap(input_data, input_size);
-    input_size = 0;
-}
 #define READ_NUMBER                                                \
         char c;                                                    \
         for (*x = *input_data++ & 15; (c = *input_data++) >= '0';) \
@@ -262,6 +257,12 @@ void rd_i32(i32 *x) { READ_NUMBER }
 void rd_u32(u32 *x) { READ_NUMBER }
 void rd_i64(i64 *x) { READ_NUMBER }
 void rd_u64(u64 *x) { READ_NUMBER }
+__attribute__((destructor)) void _destruct_read_(void)
+{
+    munmap(input_data, input_size);
+    input_size = 0;
+}
+
 #undef READ_NUMBER
 
 #pragma endregion Fast Input
