@@ -239,6 +239,8 @@ void printb_64bit(u64 v) { u64 mask = (u64)1 << (sizeof(v) * CHAR_BIT - 1); do {
 
 #endif // USE_POSIX_IO
 
+// clang-format off
+
 #ifdef USE_FAST_IO
 
 #pragma region Fast IO
