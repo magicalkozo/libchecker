@@ -201,11 +201,10 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg &
 // clang-format on
 #pragma endregion template
 
+#pragma region POSIX IO
 // clang-format off
 
 #ifdef USE_POSIX_IO
-
-#pragma region POSIX IO
 
 #pragma region POSIX Input
 
@@ -233,17 +232,15 @@ void printb_64bit(u64 v) { u64 mask = (u64)1 << (sizeof(v) * CHAR_BIT - 1); do {
 
 #pragma endregion POSIX Output
 
-#pragma endregion POSIX IO
+#endif  // USE_POSIX_IO
 
 // clang-format on
+#pragma endregion POSIX IO
 
-#endif // USE_POSIX_IO
-
+#pragma region Fast IO
 // clang-format off
 
 #ifdef USE_FAST_IO
-
-#pragma region Fast IO
 
 #pragma region Fast Input
 
@@ -416,8 +413,7 @@ __attribute__((destructor)) void _write_destructor_(void)
 
 #pragma endregion Fast Output
 
-#pragma endregion Fast IO
-
 #endif  // USE_FAST_IO
 
 // clang-format on
+#pragma endregion Fast IO
