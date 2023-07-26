@@ -2,6 +2,6 @@
 
 int main(void)
 {
-    __builtin_trap();
+    printf("Hello, World!");
     return 0;
 }
