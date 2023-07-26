@@ -203,11 +203,11 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull, deg = k; while (deg > 0) { if (deg &
 
 // clang-format off
 
-#ifdef USE_TEST_IO
+#ifdef USE_POSIX_IO
 
-#pragma region TEST IO
+#pragma region POSIX IO
 
-#pragma region Test Input
+#pragma region POSIX Input
 
 u32 in_u32(void) { u32 c, x = 0; while (c = getchar_unlocked(), c < '0' || c > '9') {} while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return x; }
 u64 in_u64(void) { u64 c, x = 0; while (c = getchar_unlocked(), c < '0' || c > '9') {} while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return x; }
@@ -216,9 +216,9 @@ i32 in_i32(void) { i32 c, x = 0, f = 1; while (c = getchar_unlocked(), c < '0' |
 i64 in_i64(void) { i64 c, x = 0, f = 1; while (c = getchar_unlocked(), c < '0' || c > '9') { if (c == '-') { f = -f; } } while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return f * x; }
 i128 in_i128(void) { i128 c, x = 0, f = 1; while (c = getchar_unlocked(), c < '0' || c > '9') { if (c == '-') { f = -f; } } while ('/' < c && c < ':') { x = x * 10 + c - '0'; c = getchar_unlocked(); } return f * x; }
 
-#pragma endregion Test Input
+#pragma endregion POSIX Input
 
-#pragma region Test Output
+#pragma region POSIX Output
 
 void out_u32(u32 x) { if (x >= 10) { out_u32(x / 10); } putchar_unlocked(x - x / 10 * 10 + '0'); }
 void out_u64(u64 x) { if (x >= 10) { out_u64(x / 10); } putchar_unlocked(x - x / 10 * 10 + '0'); }
@@ -231,13 +231,13 @@ void space(void) { putchar_unlocked(' '); }
 void printb_32bit(u32 v) { u32 mask = (u32)1 << (sizeof(v) * CHAR_BIT - 1); do { putchar_unlocked(mask & v ? '1' : '0'); } while (mask >>= 1); }
 void printb_64bit(u64 v) { u64 mask = (u64)1 << (sizeof(v) * CHAR_BIT - 1); do { putchar_unlocked(mask & v ? '1' : '0'); } while (mask >>= 1); }
 
-#pragma endregion Test Output
+#pragma endregion POSIX Output
 
-#pragma endregion TEST IO
+#pragma endregion POSIX IO
 
 // clang-format on
 
-#endif // USE_TEST_IO
+#endif // USE_POSIX_IO
 
 #ifdef USE_FAST_IO
 
