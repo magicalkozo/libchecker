@@ -260,27 +260,27 @@ __attribute__((constructor)) void _constructor_read_(void)
     }
     madvise(input_data, input_size, MADV_SEQUENTIAL);
 }
-#define READ_NUMBER                                                 \
+#define READ_INTEGER                                                \
         char c;                                                     \
         for (*x = *input_data++ & 15; (c = *input_data++) >= '0';)  \
         {                                                           \
             *x = *x * 10 + (c & 15);                                \
         }
-void rd_int(int *x) { READ_NUMBER }
-void rd_uint(unsigned *x) { READ_NUMBER }
-void rd_ll(long long *x) { READ_NUMBER }
-void rd_ull(unsigned long long *x) { READ_NUMBER }
-void rd_i32(i32 *x) { READ_NUMBER }
-void rd_u32(u32 *x) { READ_NUMBER }
-void rd_i64(i64 *x) { READ_NUMBER }
-void rd_u64(u64 *x) { READ_NUMBER }
+void rd_int(int *x) { READ_INTEGER }
+void rd_uint(unsigned *x) { READ_INTEGER }
+void rd_ll(long long *x) { READ_INTEGER }
+void rd_ull(unsigned long long *x) { READ_INTEGER }
+void rd_i32(i32 *x) { READ_INTEGER }
+void rd_u32(u32 *x) { READ_INTEGER }
+void rd_i64(i64 *x) { READ_INTEGER }
+void rd_u64(u64 *x) { READ_INTEGER }
 __attribute__((destructor)) void _destruct_read_(void)
 {
     munmap(input_data, input_size);
     input_size = 0;
 }
 
-#undef READ_NUMBER
+#undef READ_INTEGER
 
 #pragma endregion Fast Input
 
@@ -340,33 +340,33 @@ size_t get_integer_size(u64 n)
         return 1;
     }
 }
+#define OUTPUT_BUFFER_CHECK                             \
+    if (__builtin_expect(pos == output_buf_size, 0))    \
+        flush();
 void wtn(void)
 {
     output_buf[pos++] = '\n';
-    if (__builtin_expect(pos == output_buf_size, 0))
-        flush();
+    OUTPUT_BUFFER_CHECK
 }
 void wts(void)
 {
     output_buf[pos++] = ' ';
-    if (__builtin_expect(pos == output_buf_size, 0))
-        flush();
+    OUTPUT_BUFFER_CHECK
 }
 void wt_char(char c)
 {
     output_buf[pos++] = c;
-    if (__builtin_expect(pos == output_buf_size, 0))
-        flush();
+    OUTPUT_BUFFER_CHECK
 }
 void wt_str(const char *s)
 {
     while (*s != 0)
     {
         output_buf[pos++] = *s++;
-        if (__builtin_expect(pos == output_buf_size, 0))
-            flush();
+        OUTPUT_BUFFER_CHECK
     }
 }
+#undef OUTPUT_BUFFER_CHECK
 #define WRITE_SIGN_NUMBER                                                                   \
     if (__builtin_expect(pos + output_integer_size >= output_buf_size, 0))                  \
         flush();                                                                            \
