@@ -65,18 +65,18 @@ u64 rotl64(u64 x, i64 r) { return rotr64(x, -r); }
 #pragma region types
 // clang-format off
 
-typedef struct { i32 a, i32 b } Tuple2_i32;
-typedef struct { i64 a, i64 b } Tuple2_i64;
-typedef struct { u32 a, u32 b } Tuple2_u32;
-typedef struct { u64 a, u64 b } Tuple2_u64;
-typedef struct { i32 a, i32 b, i32 c } Tuple3_i32;
-typedef struct { i64 a, i64 b, i64 c } Tuple3_i64;
-typedef struct { u32 a, u32 b, u32 c } Tuple3_u32;
-typedef struct { u64 a, u64 b, u64 c } Tuple3_u64;
-typedef struct { i32 a, i32 b, i32 c, i32 d } Tuple4_i32;
-typedef struct { i64 a, i64 b, i64 c, i64 d } Tuple4_i64;
-typedef struct { u32 a, u32 b, u32 c, u32 d } Tuple4_u32;
-typedef struct { u64 a, u64 b, u64 c, u64 d } Tuple4_u64;
+typedef struct { i32 a, b; } Tuple2_i32;
+typedef struct { i64 a, b; } Tuple2_i64;
+typedef struct { u32 a, b; } Tuple2_u32;
+typedef struct { u64 a, b; } Tuple2_u64;
+typedef struct { i32 a, b, c; } Tuple3_i32;
+typedef struct { i64 a, b, c; } Tuple3_i64;
+typedef struct { u32 a, b, c; } Tuple3_u32;
+typedef struct { u64 a, b, c; } Tuple3_u64;
+typedef struct { i32 a, b, c, d; } Tuple4_i32;
+typedef struct { i64 a, b, c, d; } Tuple4_i64;
+typedef struct { u32 a, b, c, d; } Tuple4_u32;
+typedef struct { u64 a, b, c, d; } Tuple4_u64;
 
 // clang-format on
 #pragma endregion types
