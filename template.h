@@ -1,12 +1,13 @@
 #define LOCAL
-#define USE_M32
-#define USE_M64
-#define USE_B32
-#define USE_B64
-#define USE_KTH_ROOT_INT
-#define USE_QUADRATIC_RESIDUE
-#define USE_GCD
-#define USE_COMBSORT
+#define USE_DM32
+// #define USE_M32
+// #define USE_M64
+// #define USE_B32
+// #define USE_B64
+// #define USE_KTH_ROOT_INT
+// #define USE_QUADRATIC_RESIDUE
+// #define USE_GCD
+// #define USE_COMBSORT
 
 #pragma region template
 #
@@ -649,6 +650,119 @@ u64 modinv64(u64 x, u64 mod)
 #pragma endregion modular multiplicative inverse
 
 #pragma region ModInt
+#
+#if defined(USE_DM32)
+static inline u32 r1_dm32(u32 mod)
+{
+    return (u32)(i32)-1 % mod + 1;
+}
+static inline u32 r2_dm32(u32 mod)
+{
+    return (u64)(i64)-1 % mod + 1;
+}
+static inline u32 r3_dm32(u32 mod, u32 r1, u32 r2)
+{
+    return (u32)(((u64)r1 * (u64)r2) % mod);
+}
+static inline u32 n_dm32(u32 mod)
+{
+    return mod;
+}
+static inline u32 ni_dm32(u32 mod)
+{
+    u32 ni = mod;
+    for (int _ = 0; _ < 4; ++_)
+        ni *= 2 - ni * mod;
+    return ni;
+}
+static inline u32 n2_dm32(u32 mod)
+{
+    return mod << 1;
+}
+static inline u32 dmr32(u64 a, u32 ni, u32 n)
+{
+    u32 y = (u32)(a >> 32) - (u32)(((u64)((u32)a * ni) * n) >> 32);
+    return (i32)y < 0 ? y + n : y;
+}
+static inline u32 to_dm32(u32 a, u32 r2, u32 ni, u32 n)
+{
+    return dmr32((u64)a * r2, ni, n);
+}
+static inline u32 from_dm32(u32 a, u32 ni, u32 n)
+{
+    return dmr32((u64)a, ni, n);
+}
+u32 add_dm32(u32 a, u32 b, u32 n)
+{
+    a += b;
+    a -= (a >= n ? n : 0);
+    return a;
+}
+u32 sub_dm32(u32 a, u32 b, u32 n)
+{
+    a += (a < b ? n : 0);
+    a -= b;
+    return a;
+}
+u32 min_dm32(u32 a, u32 n)
+{
+    return sub_dm32(0, a, n);
+}
+u32 relaxed_add_dm32(u32 a, u32 b, u32 n2)
+{
+    a += b - n2;
+    a += n2 & -(a >> 31u);
+    return a;
+}
+u32 relaxed_sub_dm32(u32 a, u32 b, u32 n2)
+{
+    a -= b;
+    a += n2 & -(a >> 31u);
+    return a;
+}
+u32 relaxed_min_dm32(u32 a, u32 n2)
+{
+    return relaxed_sub_dm32(0, a, n2);
+}
+u32 mul_dm32(u32 a, u32 b, u32 ni, u32 n)
+{
+    return dmr32((u64)a * b, ni, n);
+}
+u32 squ_dm32(u32 a, u32 ni, u32 n)
+{
+    return dmr32((u64)a * a, ni, n);
+}
+u32 shl_dm32(u32 a, u32 n)
+{
+    return (a <<= 1) >= n ? a - n : a;
+}
+u32 shr_dm32(u32 a, u32 n)
+{
+    return (a & 1) ? ((a >> 1) + (n >> 1) + 1) : (a >> 1);
+}
+u32 pow_dm32(u32 a, u64 k, u32 r1, u32 ni, u32 n)
+{
+    u32 ret = r1;
+    while (k > 0)
+    {
+        if (k & 1)
+        {
+            ret = mul_dm32(ret, a, ni, n);
+        }
+        a = squ_dm32(a, ni, n);
+        k >>= 1;
+    }
+    return ret;
+}
+u32 inv_dm32(u32 a, u32 r3, u32 ni, u32 n)
+{
+    return dmr32((u64)r3 * modinv32(a, n), ni, n);
+}
+u32 div_dm32(u32 a, u32 b, u32 r3, u32 ni, u32 n)
+{
+    return mul_dm32(a, inv_dm32(b, r3, ni, n), ni, n);
+}
+#endif
 #
 #if defined(USE_M32)
 #
