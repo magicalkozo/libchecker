@@ -1,12 +1,12 @@
 #define LOCAL
-// #define USE_M32
-// #define USE_M64
-// #define USE_B32
-// #define USE_B64
-// #define USE_KTH_ROOT_INT
-// #define USE_QUADRATIC_RESIDUE
-// #define USE_GCD
-// #define USE_COMBSORT
+#define USE_M32
+#define USE_M64
+#define USE_B32
+#define USE_B64
+#define USE_KTH_ROOT_INT
+#define USE_QUADRATIC_RESIDUE
+#define USE_GCD
+#define USE_COMBSORT
 
 #pragma region template
 #
