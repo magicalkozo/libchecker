@@ -12,8 +12,8 @@
 // #define USE_GCD
 // #define USE_COMBSORT
 
-#pragma region template
-
+#if 1 /* template */
+#
 #if defined(LOCAL)
 #
 #pragma GCC optimize("O3,unroll-loops")
@@ -67,11 +67,10 @@ typedef struct { i32 a, b, c, d; } Quadruple_i32;
 typedef struct { i64 a, b, c, d; } Quadruple_i64;
 typedef struct { u32 a, b, c, d; } Quadruple_u32;
 typedef struct { u64 a, b, c, d; } Quadruple_u64;
+#endif /* template */
 
-#pragma endregion template
-
-#pragma region IO
-
+#if 1 /* IO */
+#
 #if defined(LOCAL)
 #
 #define INPUT_UINT(bit)                                \
@@ -310,10 +309,11 @@ __attribute__((destructor)) void _write_destructor_(void)
 #undef WRITE_UNSIGN_NUMBER
 #
 #endif
+#
+#endif /* IO */
 
-#pragma endregion IO
-
-#pragma region bitop
+#if 1 /* bit operation */
+#
 #define ctz32(a) ((a) ? __builtin_ctz((a)) : (32))
 #define clz32(a) ((a) ? __builtin_clz((a)) : (32))
 #define pct32(a) __builtin_popcount((a))
@@ -330,124 +330,47 @@ __attribute__((destructor)) void _write_destructor_(void)
 #define bit_floor64(a) ((!(a)) ? (0) : ((1ull) << ((63) - clz64((a)))))
 #define flip_Nbit(a, n) ((a) ^ ((1) << (n)))
 #define only_lsb(a) ((a) & (-(a)))
-//TODO: to MACROS
-u32 bit_reverse32(u32 v) { v = (v & 0x55555555) << 1 | (v >> 1 & 0x55555555); v = (v & 0x33333333) << 2 | (v >> 2 & 0x33333333); v = (v & 0x0f0f0f0f) << 4 | (v >> 4 & 0x0f0f0f0f); v = (v & 0x00ff00ff) << 8 | (v >> 8 & 0x00ff00ff); v = (v & 0x0000ffff) << 16 | (v >> 16 & 0x0000ffff); return v; }
-u64 bit_reverse64(u64 v) { v = (v & 0x5555555555555555) <<  1 | (v >>  1 & 0x5555555555555555); v = (v & 0x3333333333333333) <<  2 | (v >>  2 & 0x3333333333333333); v = (v & 0x0f0f0f0f0f0f0f0f) <<  4 | (v >>  4 & 0x0f0f0f0f0f0f0f0f); v = (v & 0x00ff00ff00ff00ff) <<  8 | (v >>  8 & 0x00ff00ff00ff00ff); v = (v & 0x0000ffff0000ffff) << 16 | (v >> 16 & 0x0000ffff0000ffff); v = (v & 0x00000000ffffffff) << 32 | (v >> 32 & 0x00000000ffffffff); return v; }
-u32 rotr32(u32 x, i64 r) { if (r < 0) { u32 l = (u32)(((u64)(-r)) % 32); return x << l | x >> (-l & 31); } r %= 32; return x >> r | x << (-r & 31); }
-u64 rotr64(u64 x, i64 r) { if (r < 0) { u64 l = ((u64)(-r)) % 64; return x << l | x >> (-l & 63); } r %= 64; return x >> r | x << (-r & 63); }
-u32 rotl32(u32 x, i64 r) { return rotr32(x, -r); }
-u64 rotl64(u64 x, i64 r) { return rotr64(x, -r); }
-#pragma endregion bitop
+#define bit_reverse32(v) ((((((((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) & 0x0f0f0f0f) << 4 | ((((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) >> 4 & 0x0f0f0f0f)) & 0x00ff00ff) << 8 | ((((((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) & 0x0f0f0f0f) << 4 | ((((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) & 0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) >> 4 & 0x0f0f0f0f)) >> 8 & 0x00ff00ff)) & 0x0000ffff) << 16 | ((((((((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) & 0x0f0f0f0f) << 4 | ((((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) >> 4 & 0x0f0f0f0f)) & 0x00ff00ff) << 8 | ((((((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) & 0x0f0f0f0f) << 4 | ((((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) & 0x33333333) << 2 | ((((v) &0x55555555) << 1 | ((v) >> 1 & 0x55555555)) >> 2 & 0x33333333)) >> 4 & 0x0f0f0f0f)) >> 8 & 0x00ff00ff)) >> 16 & 0x0000ffff)
+#define bit_reverse64(v) ((((((((((((v) & 0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) & 0x00ff00ff00ff00ff) << 8 | ((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) >> 8 & 0x00ff00ff00ff00ff)) & 0x0000ffff0000ffff) << 16 | ((((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) & 0x00ff00ff00ff00ff) << 8 | ((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) >> 8 & 0x00ff00ff00ff00ff)) >> 16 & 0x0000ffff0000ffff)) & 0x00000000ffffffff) << 32 | ((((((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) & 0x00ff00ff00ff00ff) << 8 | ((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) >> 8 & 0x00ff00ff00ff00ff)) & 0x0000ffff0000ffff) << 16 | ((((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) & 0x00ff00ff00ff00ff) << 8 | ((((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) & 0x0f0f0f0f0f0f0f0f) << 4 | ((((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) & 0x3333333333333333) << 2 | ((((v) &0x5555555555555555) << 1 | ((v) >> 1 & 0x5555555555555555)) >> 2 & 0x3333333333333333)) >> 4 & 0x0f0f0f0f0f0f0f0f)) >> 8 & 0x00ff00ff00ff00ff)) >> 16 & 0x0000ffff0000ffff)) >> 32 & 0x00000000ffffffff)
+#define rotr32(x, r) ((r) < (0) ? (((x) << ((u32)(((u64)(-(r)) % (32))))) | ((x) >> ((-(((u32)(((u64)(-(r)) % (32)))))) & 31))) : (((x) >> ((r) % (32))) | ((x) << ((-(r)) & 31))))
+#define rotl32(x, r) (rotr32((x), (-(r))))
+#define rotr64(x, r) ((r) < (0) ? (((x) << (((u64)(-(r)) % (64)))) | ((x) >> ((-((((u64)(-(r)) % (64))))) & 63))) : (((x) >> ((r) % (64))) | ((x) << ((-(r)) & 63))))
+#define rotl64(x, r) (rotr64((x), (-(r))))
+#
+#endif /* bit operation */
 
-#pragma region RNGs
-
+#if 1 /* random number generators */
+#
 #if defined(LOCAL)
-u32 rand_32(void)
-{
-    static u64 pcg_state = 0x853c49e6748fea9bull;
-    u64 t = pcg_state;
-    pcg_state = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull;
-    u32 sh = ((t >> 18u) ^ t) >> 27u;
-    u32 ro = t >> 59u;
-    return (sh >> ro) | (sh << ((-ro) & 31));
-}
-u32 randrange_32(u32 l, u32 r)
-{
-    return l + rand_32() % (r - l + 1);
-}
-f32 randf_32(void)
-{
-    u32 a = 0x3F800000u | (rand_32() >> 9);
-    return (*((f32 *)(&a))) - 1;
-}
-u64 rand_64(void)
-{
-    static u64 xrsr128ss_state1 = 0x1ull;
-    static u64 xrsr128ss_state2 = 0x2ull;
-    const u64 s0 = xrsr128ss_state1;
-    u64 s1 = xrsr128ss_state2;
-    const u64 ret = rotl64(s0 * 5, 7) * 9;
-    s1 ^= s0;
-    xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16);
-    xrsr128ss_state2 = rotl64(s1, 37);
-    return ret;
-}
-u64 randrange_64(u64 l, u64 r)
-{
-    return l + rand_64() % (r - l + 1);
-}
-f64 randf_64(void)
-{
-    u64 a = 0x3FF0000000000000ull | (rand_64() >> 12);
-    return (*((f64 *)(&a))) - 1;
-}
+u32 rand_32(void) { static u64 pcg_state = 0x853c49e6748fea9bull; u64 t = pcg_state; pcg_state = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull; u32 sh = ((t >> 18u) ^ t) >> 27u; u32 ro = t >> 59u; return (sh >> ro) | (sh << ((-ro) & 31)); }
+u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
+f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
+u64 rand_64(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr128ss_state2 = 0x2ull; const u64 s0 = xrsr128ss_state1; u64 s1 = xrsr128ss_state2; const u64 ret = rotl64(s0 * 5, 7) * 9; s1 ^= s0; xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16); xrsr128ss_state2 = rotl64(s1, 37); return ret; }
+u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
+f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
 #else
-u32 rand_32(void)
-{
-    static u64 lcg_state = 14534622846793005ull;
-    lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull;
-    return (u32)lcg_state;
-}
-u32 randrange_32(u32 l, u32 r)
-{
-    return l + rand_32() % (r - l + 1);
-}
-f32 randf_32(void)
-{
-    u32 a = 0x3F800000u | (rand_32() >> 9);
-    return (*((f32 *)(&a))) - 1;
-}
-u64 rand_64(void)
-{
-    static u64 msws_state1 = 0;
-    static u64 msws_state2 = 0;
-    static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul;
-    static u64 msws_state4 = 0;
-    static u64 msws_state5 = 0;
-    static u64 msws_state6 = 0x278c5a4d8419fe6bul;
-    u64 ret;
-    msws_state1 *= msws_state1;
-    ret = msws_state1 += (msws_state2 += msws_state3);
-    msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32);
-    msws_state4 *= msws_state4;
-    msws_state4 += (msws_state5 += msws_state6);
-    msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32);
-    return ret ^ msws_state4;
-}
-u64 randrange_64(u64 l, u64 r)
-{
-    return l + rand_64() % (r - l + 1);
-}
-f64 randf_64(void)
-{
-    u64 a = 0x3FF0000000000000ull | (rand_64() >> 12);
-    return (*((f64 *)(&a))) - 1;
-}
+u32 rand_32(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
+u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
+f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
+u64 rand_64(void) { static u64 msws_state1 = 0; static u64 msws_state2 = 0; static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul; static u64 msws_state4 = 0; static u64 msws_state5 = 0; static u64 msws_state6 = 0x278c5a4d8419fe6bul; u64 ret; msws_state1 *= msws_state1; ret = msws_state1 += (msws_state2 += msws_state3); msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32); msws_state4 *= msws_state4; msws_state4 += (msws_state5 += msws_state6); msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32); return ret ^ msws_state4; }
+u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
+f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
 #endif
+#
+#endif /* random number generators */
 
-#pragma endregion RNGs
-
-#pragma region modint
-
-typedef struct
-{
-    i32 a, b;
-    u32 d;
-} Bezout32;
+#if 1 /* modular arithmetic */
+typedef struct { i32 a, b; u32 d; } Bezout32;
 Bezout32 bezout32(u32 x, u32 y)
 {
     u32 t;
     bool swap = x < y;
-    if (swap)
-        t = x, x = y, y = t;
+    if (swap) t = x, x = y, y = t;
     if (y == 0)
     {
-        if (x == 0)
-            return (Bezout32){0, 0, 0};
-        else if (swap)
-            return (Bezout32){0, 1, x};
-        else
-            return (Bezout32){1, 0, x};
+        if (x == 0) return (Bezout32){0, 0, 0};
+        else if (swap) return (Bezout32){0, 1, x};
+        else return (Bezout32){1, 0, x};
     }
     i32 s0 = 1, s1 = 0, t0 = 0, t1 = 1;
     while (true)
@@ -455,10 +378,8 @@ Bezout32 bezout32(u32 x, u32 y)
         u32 q = x / y, r = x % y;
         if (r == 0)
         {
-            if (swap)
-                return (Bezout32){t1, s1, y};
-            else
-                return (Bezout32){s1, t1, y};
+            if (swap) return (Bezout32){t1, s1, y};
+            else return (Bezout32){s1, t1, y};
         }
         i32 s2 = s0 - (i32)(q)*s1, t2 = t0 - (i32)(q)*t1;
         x = y, y = r;
@@ -470,26 +391,17 @@ u32 modinv32(u32 x, u32 mod)
     Bezout32 abd = bezout32(x, mod);
     return abd.a < 0 ? mod + abd.a : (u32)abd.a;
 }
-
-typedef struct
-{
-    i64 a, b;
-    u64 d;
-} Bezout64;
+typedef struct { i64 a, b; u64 d; } Bezout64;
 Bezout64 bezout64(u64 x, u64 y)
 {
     u64 t;
     bool swap = x < y;
-    if (swap)
-        t = x, x = y, y = t;
+    if (swap) t = x, x = y, y = t;
     if (y == 0)
     {
-        if (x == 0)
-            return (Bezout64){0, 0, 0};
-        else if (swap)
-            return (Bezout64){0, 1, x};
-        else
-            return (Bezout64){1, 0, x};
+        if (x == 0) return (Bezout64){0, 0, 0};
+        else if (swap) return (Bezout64){0, 1, x};
+        else return (Bezout64){1, 0, x};
     }
     i64 s0 = 1, s1 = 0, t0 = 0, t1 = 1;
     while (true)
@@ -497,10 +409,8 @@ Bezout64 bezout64(u64 x, u64 y)
         u64 q = x / y, r = x % y;
         if (r == 0)
         {
-            if (swap)
-                return (Bezout64){t1, s1, y};
-            else
-                return (Bezout64){s1, t1, y};
+            if (swap) return (Bezout64){t1, s1, y};
+            else return (Bezout64){s1, t1, y};
         }
         i64 s2 = s0 - (i64)(q)*s1, t2 = t0 - (i64)(q)*t1;
         x = y, y = r;
@@ -639,6 +549,10 @@ u64 shr_b64(u64 a) { return (a & 1) ? ((a >> 1) + (m_b64 >> 1) + 1) : (a >> 1); 
 u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull; while (k > 0) { if (k & 1) ret = mul_b64(ret, a); a = squ_b64(a); k >>= 1; } return ret; }
 #endif
 
+#endif /* modular arithmetic */
+
+#if 1 /* utils */
+#
 #if defined(USE_KTH_POW_ROOT)
 #
 #define IPOW(bit)   \
@@ -886,7 +800,6 @@ void combsort11_64(int a_len, u64 *a) { COMBSORT11(64) }
 #undef COMBSORT11
 #
 #endif
-
-#pragma endregion modint
-
+#
+#endif /* utils */
 // clang-format on
