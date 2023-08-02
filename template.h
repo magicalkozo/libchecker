@@ -295,7 +295,7 @@ __attribute__((destructor)) void _write_destructor_(void) {
 #endif // ONLINE-OUTPUT
 #endif // ONLINE-IO
 
-#if defined(OFF_LINE) // OFFLINE-IO
+#if defined(OFFLINE) // OFFLINE-IO
 #if defined(_WIN32)
 #define GetChar _getchar_nolock
 #define PutChar _putchar_nolock
