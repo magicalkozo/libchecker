@@ -3,14 +3,15 @@
 
 // #define USE_DM32
 // #define USE_DM64
-// #define USE_M32
-// #define USE_M64
+#define USE_M32
+#define USE_M64
 // #define USE_B32
 // #define USE_B64
+// #define USE_KTH_POW_ROOT
+// #define USE_QUADRATIC_RESIDUE
 // #define USE_GCD
 // #define USE_COMBSORT
-// #define USE_QUADRATIC_RESIDUE
-// #define USE_POW_ROOT
+#define USE_ISPRIME
 
 #if defined(ONLINE) // opt
 #
@@ -102,7 +103,7 @@ static struct stat input_stat;
 static int input_size;
 __attribute__((constructor)) void _constructor_read_(void) {
     fstat(0, &input_stat);
-    input_size = input_stat.st_size + 64;
+    input_size = input_stat.st_size + 40;
     input_data = (char *)mmap(0, input_size, PROT_READ, MAP_SHARED | MAP_POPULATE, 0, 0);
     if (input_data == MAP_FAILED)
         __builtin_trap();
@@ -798,3 +799,140 @@ bool is_perfect_seventh(u64 n)
     return m * m * m * m * m * m * m == n;
 }
 #endif // POW_ROOT
+
+#if defined(USE_QUADRATIC_RESIDUE)
+bool euler_criterion(u32 a, u32 mod)
+{
+#if defined(USE_M32)
+    return pow_m32(to_m32(a), (mod - 1) >> 1) == r1_m32;
+#elif defined(USE_B32)
+    return pow_b32(a, (mod - 1) >> 1) == 1;
+#else
+    u32 ret = 1, b = a, k = (mod - 1) >> 1;
+    while (k)
+    {
+        if (k & 1)
+            ret = (u64)b * ret % mod;
+        b = (u64)b * b % mod;
+        k >>= 1;
+    }
+    return ret == 1;
+#endif
+}
+int legendre_symbol(u32 a, u32 mod)
+{
+    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
+    int ret;
+#if defined(USE_M32)
+    if (mr32((u64)a) == 0)
+        ret = 0;
+    else if (euler_criterion(a, mod))
+        ret = 1;
+    else
+        ret = -1;
+#else
+    if (a == 0)
+        ret = 0;
+    else if (euler_criterion(a, mod))
+        ret = 1;
+    else
+        ret = -1;
+#endif
+    return ret;
+}
+int jacobi_symbol(long long a, long long n)
+{
+    int j = 1;
+    long long t;
+    while (a)
+    {
+        if (a < 0)
+        {
+            a = -a;
+            if ((n & 3) == 3)
+                j = -j;
+        }
+        int s = ctz64(a);
+        a >>= s;
+        if ((((n & 7) == 3) || ((n & 7) == 5)) && (s & 1))
+            j = -j;
+        if ((a & n & 3) == 3)
+            j = -j;
+        t = a, a = n, n = t;
+        a %= n;
+        if ((a << 1) > n)
+            a -= n;
+    }
+    return n == 1 ? j : 0;
+}
+#endif
+
+#if defined(USE_GCD)
+#
+#define BINARY_GCD(bit)             \
+    if (!a || !b)                   \
+        return a | b;               \
+    u##bit t, s = ctz##bit(a | b);  \
+    a >>= ctz##bit(a);              \
+    do                              \
+    {                               \
+        b >>= ctz##bit(b);          \
+        if (a > b)                  \
+            t = a, a = b, b = t;    \
+        b -= a;                     \
+    } while (b);                    \
+    return a << s
+u32 gcd32(u32 a, u32 b) { BINARY_GCD(32); }
+u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
+#undef BINARY_GCD
+#
+#endif
+
+#if defined(USE_COMBSORT)
+#
+#define COMBSORT11(bit)                                  \
+    int g = a_len;                                       \
+    u##bit t;                                            \
+    while (true)                                         \
+    {                                                    \
+        bool flag = 1;                                   \
+        g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; \
+        if (g == 9 || g == 10)                           \
+            g = 11;                                      \
+        for (int i = 0; i + g < a_len; i++)              \
+        {                                                \
+            if (a[i] > a[i + g])                         \
+            {                                            \
+                t = a[i], a[i] = a[i + g], a[i + g] = t; \
+                flag = false;                            \
+            }                                            \
+        }                                                \
+        if (g == 1 && flag)                              \
+            break;                                       \
+    }
+void combsort11_32(int a_len, u32 *a) { COMBSORT11(32) }
+void combsort11_64(int a_len, u64 *a) { COMBSORT11(64) }
+#undef COMBSORT11
+#
+#endif
+
+#if defined(USE_ISPRIME)
+
+bool is_prime(u64 n)
+{
+    if (n < 64)
+        return (1ull << n) & 2891462833508853932ull;
+    if (!(n & 1))
+        return false;
+    if (gcd64(n, 16294579238595022365ull) != 1)
+        return false;
+    if (n < 3481)
+        return true;
+    return true;
+}
+
+#endif
+#
+#endif /* utils */
+// clang-format on
+
