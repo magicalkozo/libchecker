@@ -14,7 +14,7 @@
 
 #if defined(ONLINE) // opt
 #
-#pragma GCC optimize("O3,unroll-loop,fast-math")
+#pragma GCC optimize("O3,unroll-loops,fast-math")
 #pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx,avx2,avx512f,tune=native,lzcnt,popcnt")
 #
 #endif // opt
