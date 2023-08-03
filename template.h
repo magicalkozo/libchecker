@@ -223,7 +223,7 @@ size_t get_integer_size(u128 n)
     }
 }
 // clang-format on
-#define OUTPUT_BUFFER_CHECK                          \
+#define OUTPUT_BUFFER_CHECK                                 \
     if (__builtin_expect(output_pos == output_buf_size, 0)) \
         flush();
 void wtn(void) {
@@ -245,32 +245,32 @@ void wt_str(const char *s) {
     }
 }
 #undef OUTPUT_BUFFER_CHECK
-#define WRITE_UNSIGN_NUMBER                                                                \
-    if (__builtin_expect(output_pos + output_integer_size >= output_buf_size, 0))                 \
-        flush();                                                                           \
-    size_t digit = get_integer_size((u128)x);                                              \
-    size_t len = digit;                                                                    \
-    while (len >= 4) {                                                                     \
-        len -= 4;                                                                          \
-        memcpy(output_buf + output_pos + len, output_block_str + (x % output_block_size) * 4, 4); \
-        x /= output_block_size;                                                            \
-    }                                                                                      \
-    memcpy(output_buf + output_pos, output_block_str + x * 4 + (4 - len), len);                   \
+#define WRITE_UNSIGN_NUMBER                                                                         \
+    if (__builtin_expect(output_pos + output_integer_size >= output_buf_size, 0))                   \
+        flush();                                                                                    \
+    size_t digit = get_integer_size((u128)x);                                                       \
+    size_t len = digit;                                                                             \
+    while (len >= 4) {                                                                              \
+        len -= 4;                                                                                   \
+        memcpy(output_buf + output_pos + len, output_block_str + (x % output_block_size) * 4, 4);   \
+        x /= output_block_size;                                                                     \
+    }                                                                                               \
+    memcpy(output_buf + output_pos, output_block_str + x * 4 + (4 - len), len);                     \
     output_pos += digit;
 
-#define WRITE_SIGN_NUMBER                                                                  \
-    if (__builtin_expect(output_pos + output_integer_size >= output_buf_size, 0))                 \
-        flush();                                                                           \
-    if (x < (i128)0ull)                                                                    \
-        wt_char('-'), x = -x;                                                              \
-    size_t digit = get_integer_size(x);                                                    \
-    size_t len = digit;                                                                    \
-    while (len >= 4) {                                                                     \
-        len -= 4;                                                                          \
-        memcpy(output_buf + output_pos + len, output_block_str + (x % output_block_size) * 4, 4); \
-        x /= output_block_size;                                                            \
-    }                                                                                      \
-    memcpy(output_buf + output_pos, output_block_str + x * 4 + (4 - len), len);                   \
+#define WRITE_SIGN_NUMBER                                                                           \
+    if (__builtin_expect(output_pos + output_integer_size >= output_buf_size, 0))                   \
+        flush();                                                                                    \
+    if (x < (i128)0ull)                                                                             \
+        wt_char('-'), x = -x;                                                                       \
+    size_t digit = get_integer_size(x);                                                             \
+    size_t len = digit;                                                                             \
+    while (len >= 4) {                                                                              \
+        len -= 4;                                                                                   \
+        memcpy(output_buf + output_pos + len, output_block_str + (x % output_block_size) * 4, 4);   \
+        x /= output_block_size;                                                                     \
+    }                                                                                               \
+    memcpy(output_buf + output_pos, output_block_str + x * 4 + (4 - len), len);                     \
     output_pos += digit;
 // clang-format off
 void wt_uint(unsigned x) { WRITE_UNSIGN_NUMBER }
