@@ -1,5 +1,18 @@
 {
     "editor.fontSize": 20,
-    "editor.fontFamily": "UDEV Gothic NFLG",
-    "editor.fontLigatures": true
+    "editor.fontFamily": "UDEV Gothic 35NFLG",
+    "editor.fontLigatures": true,
+    "editor.formatOnSave": true,
+    "editor.bracketPairColorization.enabled": true,
+    "workbench.colorCustomizations": {
+        "editorBracketHighlight.foreground1": "#FF0000",
+        "editorBracketHighlight.foreground2": "#FFBF3F",
+        "editorBracketHighlight.foreground3": "#FFFF00",
+        "editorBracketHighlight.foreground4": "#3FFF3F",
+        "editorBracketHighlight.foreground5": "#3F7FFF",
+        "editorBracketHighlight.foreground6": "#FF7FFF"
+    },
+    "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.cStandard": "gnu17",
+    "workbench.colorTheme": "Shades of Purple (Super Dark)",
 }
