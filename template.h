@@ -1,27 +1,19 @@
-// #define ONLINE
-#define USE_DM32
-#define USE_DM64
-#define USE_M32
-#define USE_M64
-#define USE_B32
-#define USE_B64
-#define USE_GCD
-#define USE_COMBSORT
-#define USE_QUADRATIC_RESIDUE
-#define USE_POW_ROOT
+#define ONLINE
+// #define USE_IO
+// #define USE_DM32
+// #define USE_DM64
+// #define USE_M32
+// #define USE_M64
+// #define USE_B32
+// #define USE_B64
+// #define USE_GCD
+// #define USE_RNGs
+// #define USE_COMBSORT
+// #define USE_QUADRATIC_RESIDUE
+// #define USE_POW_ROOT
 
 #if defined(ONLINE)
 #pragma GCC optimize("O3")
-#pragma GCC optimize("fast-math")
-#pragma GCC optimize("unroll-loops")
-#pragma GCC target("sse")
-#pragma GCC target("sse2")
-#pragma GCC target("sse3")
-#pragma GCC target("sse4")
-#pragma GCC target("abm")
-#pragma GCC target("mmx")
-#pragma GCC target("avx")
-#pragma GCC target("avx2")
 #pragma GCC target("avx512f")
 #pragma GCC target("tune=native")
 #pragma GCC target("lzcnt")
@@ -99,10 +91,11 @@ typedef struct { u64 a, b, c, d; } Quadruple_u64;
 
 #if defined(ONLINE)
 static char  *input;
-static size_t input_size;
+static size_t input_size, input_string_size;
 __attribute__((constructor))void _construct_read_(void) {
     struct stat st;
     fstat(0, &st);
+    input_string_size = st.st_size - 1;
     input_size = st.st_size + 64;
     input      = (char *)mmap(0, input_size, PROT_READ, MAP_SHARED | MAP_POPULATE, 0, 0);
     if (input == MAP_FAILED)
@@ -317,6 +310,7 @@ __attribute__((destructor)) void _write_destructor_(void) {
 }
 #endif
 
+#if defined(USE_IO)
 #if defined(_WIN32)
 #define GetChar _getchar_nolock
 #define PutChar _putchar_nolock
@@ -384,6 +378,7 @@ void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
 #undef OUTPUT_UINT
 #undef OUTPUT_SINT
 #undef OUTPUT_BINARY
+#endif
 
 // clang-format off
 #if defined(USE_DM32) || defined(USE_DM64) || defined(USE_M32) || defined(USE_M64) || defined(USE_B32) || defined(USE_B64)
@@ -568,6 +563,82 @@ u32 gcd32(u32 a, u32 b) { BINARY_GCD(32); }
 u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
 #undef BINARY_GCD
 #endif                // GCD
+
+#if defined(USE_RNGs) // RNGs
+
+#if defined(ONLINE)
+u32 rand_32(void) {
+    static u64 lcg_state = 14534622846793005ull;
+    lcg_state            = 6364136223846793005ull * lcg_state + 1442695040888963407ull;
+    return (u32)lcg_state;
+}
+u32 randrange_32(u32 l, u32 r) {
+    return l + rand_32() % (r - l + 1);
+}
+f32 randf_32(void) {
+    u32 a = 0x3F800000u | (rand_32() >> 9);
+    return (*((f32 *)(&a))) - 1;
+}
+u64 rand_64(void) {
+    static u64 msws_state1 = 0;
+    static u64 msws_state2 = 0;
+    static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul;
+    static u64 msws_state4 = 0;
+    static u64 msws_state5 = 0;
+    static u64 msws_state6 = 0x278c5a4d8419fe6bul;
+    u64        ret;
+    msws_state1 *= msws_state1;
+    ret         = msws_state1 += (msws_state2 += msws_state3);
+    msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32);
+    msws_state4 *= msws_state4;
+    msws_state4 += (msws_state5 += msws_state6);
+    msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32);
+    return ret ^ msws_state4;
+}
+u64 randrange_64(u64 l, u64 r) {
+    return l + rand_64() % (r - l + 1);
+}
+f64 randf_64(void) {
+    u64 a = 0x3FF0000000000000ull | (rand_64() >> 12);
+    return (*((f64 *)(&a))) - 1;
+}
+#else
+u32 rand_32(void) {
+    static u64 pcg_state = 0x853c49e6748fea9bull;
+    u64        t         = pcg_state;
+    pcg_state            = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull;
+    u32 sh               = ((t >> 18u) ^ t) >> 27u;
+    u32 ro               = t >> 59u;
+    return (sh >> ro) | (sh << ((-ro) & 31));
+}
+u32 randrange_32(u32 l, u32 r) {
+    return l + rand_32() % (r - l + 1);
+}
+f32 randf_32(void) {
+    u32 a = 0x3F800000u | (rand_32() >> 9);
+    return (*((f32 *)(&a))) - 1;
+}
+u64 rand_64(void) {
+    static u64 xrsr128ss_state1 = 0x1ull;
+    static u64 xrsr128ss_state2 = 0x2ull;
+    const u64  s0               = xrsr128ss_state1;
+    u64        s1               = xrsr128ss_state2;
+    const u64  ret              = rotl64(s0 * 5, 7) * 9;
+    s1 ^= s0;
+    xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16);
+    xrsr128ss_state2 = rotl64(s1, 37);
+    return ret;
+}
+u64 randrange_64(u64 l, u64 r) {
+    return l + rand_64() % (r - l + 1);
+}
+f64 randf_64(void) {
+    u64 a = 0x3FF0000000000000ull | (rand_64() >> 12);
+    return (*((f64 *)(&a))) - 1;
+}
+#endif
+
+#endif                // RNGs
 
 #if defined(USE_COMBSORT) // COMBSORT
 #define COMBSORT11(bit)                                  \
