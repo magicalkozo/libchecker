@@ -311,24 +311,24 @@ u64 *conv_mod_2_64(int a_len, int b_len, u64 *a, u64 *b) {
 }
 
 void solve_conv_mod_998(void) {
-    u32 A[1 << 19], B[1 << 19];
+    u32 A[524288], B[524288];
     int n, m;
     rd_int(&n);
     rd_int(&m);
     u32 x;
     for (int i = 0; i < n; i++) {
         rd_u32(&x);
-        A[i] = to_m32(x);
+        A[i] = to_dm32(x, r2_1, ni_1, n1);
     }
     for (int i = 0; i < m; i++) {
         rd_u32(&x);
-        B[i] = to_m32(x);
+        B[i] = to_dm32(x, r2_1, ni_1, n1);
     }
     u32 *C = conv1(n, m, A, B);
     for (int i = 0; i < n + m - 1; i++) {
         if (i)
             wt_char(' ');
-        wt_u32(from_m32(C[i]));
+        wt_u32(from_dm32(C[i], ni_1, n1));
     }
     wt_char('\n');
     free(C);
