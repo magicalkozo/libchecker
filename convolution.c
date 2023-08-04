@@ -327,10 +327,10 @@ void solve_conv_mod_998(void) {
     u32 *C = conv1(n, m, A, B);
     for (int i = 0; i < n + m - 1; i++) {
         if (i)
-            wts();
+            wt_char(' ');
         wt_u32(from_m32(C[i]));
     }
-    wtn();
+    wt_char('\n');
     free(C);
 }
 void solve_conv_mod_107(void) {
@@ -345,10 +345,10 @@ void solve_conv_mod_107(void) {
     u32 *c = conv_mod_arbitrary(1000000007, n, m, a, b);
     for (int i = 0; i < n + m - 1; i++) {
         if (i)
-            wts();
+            wt_char(' ');
         wt_u32(c[i]);
     }
-    wtn();
+    wt_char('\n');
     free(c);
 }
 void solve_conv_mod_2_64(void) {
@@ -363,9 +363,9 @@ void solve_conv_mod_2_64(void) {
     u64 *c = conv_mod_2_64(n, m, a, b);
     for (int i = 0; i < n + m - 1; i++) {
         if (i)
-            wts();
+            wt_char(' ');
         wt_u64(c[i]);
     }
-    wtn();
+    wt_char('\n');
     free(c);
 }
