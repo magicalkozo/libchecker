@@ -1,14 +1,14 @@
-#define ONLINE
-// #define USE_DM32
-// #define USE_DM64
-// #define USE_M32
-// #define USE_M64
-// #define USE_B32
-// #define USE_B64
-// #define USE_GCD
-// #define USE_COMBSORT
-// #define USE_QUADRATIC_RESIDUE
-// #define USE_POW_ROOT
+// #define ONLINE
+#define USE_DM32
+#define USE_DM64
+#define USE_M32
+#define USE_M64
+#define USE_B32
+#define USE_B64
+#define USE_GCD
+#define USE_COMBSORT
+#define USE_QUADRATIC_RESIDUE
+#define USE_POW_ROOT
 
 #if defined(ONLINE)
 #pragma GCC optimize("O3")
