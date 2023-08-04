@@ -97,7 +97,7 @@ typedef struct { u64 a, b, c, d; } Quadruple_u64;
 #define rotr64(x, r)     ((r) < (0) ? (((x) << (((u64)(-(r)) % (64)))) | ((x) >> ((-((((u64)(-(r)) % (64))))) & 63))) : (((x) >> ((r) % (64))) | ((x) << ((-(r)) & 63))))
 #define rotl64(x, r)     (rotr64((x), (-(r))))
 
-#if 1
+#if defined(ONLINE)
 static char  *input;
 static size_t input_size;
 __attribute__((constructor))void _construct_read_(void) {
