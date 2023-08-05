@@ -310,6 +310,32 @@ u64 *conv_mod_2_64(int a_len, int b_len, u64 *a, u64 *b) {
     return ret;
 }
 
+void supset_zeta_transform(int A_len, u32 *A) {
+    for (u32 w = 1; w != A_len; w <<= 1)
+        for (u32 k = 0; k != A_len; k += w * 2)
+            for (u32 i = 0; i != w; ++i)
+                A[k + i] = add_m32(A[k + i], A[k + w + i]);
+}
+void supset_mobius_transform(int A_len, u32 *A) {
+    for (u32 w = 1; w != A_len; w <<= 1)
+        for (u32 k = 0; k != A_len; k += w * 2)
+            for (u32 i = 0; i != w; i += 1)
+                A[k + i] = sub_m32(A[k + i], A[k + w + i]);
+}
+u32 *bitwise_and_convolution(int A_len, int B_len, u32 *A, u32 *B) {
+    assert(A_len == B_len);
+    supset_zeta(A_len, A);
+    supset_zeta(B_len, B);
+    u32 *ret = (u32 *)calloc(A_len, sizeof(u32));
+    if (ret == NULL)
+        exit(EXIT_FAILURE);
+    for (int i = 0; i < A_len; i++)
+        ret[i] = mul_m32(A[i], B[i]);
+    supset_mobius(A_len, ret);
+    return ret;
+}
+
+
 void solve_conv_mod_998(void) {
     u32 A[524288], B[524288];
     int n, m;
@@ -368,4 +394,29 @@ void solve_conv_mod_2_64(void) {
     }
     wt_char('\n');
     free(c);
+}
+
+void solve_conv_bitwise_and(void) {
+    set_m32(998244353u);
+    u32 A[1 << 20], B[1 << 20];
+    int N;
+    rd_int(&N);
+    N = 1 << N;
+    u32 x;
+    for (int i = 0; i < N; i++) {
+        rd_u32(&x);
+        A[i] = to_m32(x);
+    }
+    for (int i = 0; i < N; i++) {
+        rd_u32(&x);
+        B[i] = to_m32(x);
+    }
+    u32 *C = bitwise_and_convolution(N, N, A, B);
+    for (int i = 0; i < N; i++) {
+        if (i)
+            wt_char(' ');
+        wt_u32(from_m32(C[i]));
+    }
+    wt_char('\n');
+    free(C);
 }
