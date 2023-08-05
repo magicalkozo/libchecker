@@ -322,7 +322,7 @@ void supset_mobius_transform(int A_len, u32 *A) {
             for (u32 i = 0; i != w; i += 1)
                 A[k + i] = sub_m32(A[k + i], A[k + w + i]);
 }
-u32 *bitwise_and_convolution(int A_len, int B_len, u32 *A, u32 *B) {
+u32 *conv_bitwise_and(int A_len, int B_len, u32 *A, u32 *B) {
     assert(A_len == B_len);
     supset_zeta(A_len, A);
     supset_zeta(B_len, B);
@@ -332,6 +332,31 @@ u32 *bitwise_and_convolution(int A_len, int B_len, u32 *A, u32 *B) {
     for (int i = 0; i < A_len; i++)
         ret[i] = mul_m32(A[i], B[i]);
     supset_mobius(A_len, ret);
+    return ret;
+}
+
+void walsh_hadamard_transform(int A_len, u32 *A) {
+    for (int i = 1; i < A_len; i <<= 1)
+        for (int j = 0; j < A_len; j += i << 1)
+            for (int k = 0; k < i; k++) {
+                u32 s = A[j + k];
+                u32 t = A[j + k + i];
+                A[j + k] = add_m32(s, t);
+                A[j + k + i] = sub_m32(s, t);
+            }
+}
+u32 *conv_bitwise_xor(int A_len, int B_len, u32 *A, u32 *B) {
+    u32 *ret = (u32 *)calloc(A_len, sizeof(u32));
+    if (ret == NULL)
+        exit(EXIT_FAILURE);
+    walsh_hadamard_transform(A_len, A);
+    walsh_hadamard_transform(B_len, B);
+    for (int i = 0; i < A_len; i++)
+        ret[i] = mul_m32(A[i], B[i]);
+    walsh_hadamard_transform(A_len, ret);
+    u32 inv2t = inv_m32(to_m32(A_len));
+    for (int i = 0; i < A_len; i++)
+        ret[i] = mul_m32(ret[i], inv2t);
     return ret;
 }
 
@@ -411,7 +436,7 @@ void solve_conv_bitwise_and(void) {
         rd_u32(&x);
         B[i] = to_m32(x);
     }
-    u32 *C = bitwise_and_convolution(N, N, A, B);
+    u32 *C = conv_bitwise_and(N, N, A, B);
     for (int i = 0; i < N; i++) {
         if (i)
             wt_char(' ');
@@ -419,4 +444,30 @@ void solve_conv_bitwise_and(void) {
     }
     wt_char('\n');
     free(C);
+}
+
+void solve_conv_bitwise_or(void) {
+    set_m32(998244353u);
+    u32 A[1 << 20], B[1 << 20];
+    int N;
+    rd_int(&N);
+    N = 1 << N;
+    u32 x;
+    for (int i = 0; i < N; i++) {
+        rd_u32(&x);
+        A[i] = to_m32(x);
+    }
+    for (int i = 0; i < N; i++) {
+        rd_u32(&x);
+        B[i] = to_m32(x);
+    }
+    u32 *C = conv_bitwise_xor(N, N, A, B);
+    for (int i = 0; i < N; i++) {
+        if (i)
+            wt_char(' ');
+        wt_u32(from_m32(C[i]));
+    }
+    wt_char('\n');
+    free(C);
+    return 0;
 }
