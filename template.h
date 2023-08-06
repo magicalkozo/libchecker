@@ -102,24 +102,27 @@ __attribute__((constructor))void _construct_read_(void) {
         __builtin_trap();
     madvise(input, input_size, MADV_SEQUENTIAL);
 }
-#define READ_SKIP                           \
-    char c = *input;                        \
-    if (c < '!')                            \
+
+#define READ_SKIP                                                                               \
+    char c = *input;                                                                            \
+    if (c < '!')                                                                                \
         *input++, c = *input;
-#define READ_UNSIGNED                                \
-    READ_SKIP                                        \
-    for (*x = *input++ & 15; (c = *input++) >= '0';) \
+#define READ_CHAR_TO_INTEGER                                                                    \
+    for (*x = *input++ & 15; (c = *input++) >= '0';)                                            \
         *x = *x * 10 + (c & 15);
-#define READ_SIGNED                                  \
-    READ_SKIP                                        \
-    bool flag = false;                               \
-    if (c == '-') {                                  \
-        flag = true;                                 \
-        *input++;                                    \
-    }                                                \
-    for (*x = *input++ & 15; (c = *input++) >= '0';) \
-        *x = *x * 10 + (c & 15);                     \
+#define READ_UNSIGNED                                                                           \
+    READ_SKIP                                                                                   \
+    READ_CHAR_TO_INTEGER
+#define READ_SIGNED                                                                             \
+    READ_SKIP                                                                                   \
+    bool flag = false;                                                                          \
+    if (c == '-') {                                                                             \
+        flag = true;                                                                            \
+        *input++;                                                                               \
+    }                                                                                           \
+    READ_CHAR_TO_INTEGER                                                                        \
     *x = flag ? (*x) * (-1) : *x;
+
 void rd_int(int *x) { READ_SIGNED }
 void rd_ll(long long *x) { READ_SIGNED }
 void rd_i32(i32 *x) { READ_SIGNED }
@@ -130,20 +133,25 @@ void rd_ull(unsigned long long *x) { READ_UNSIGNED }
 void rd_u32(u32 *x) { READ_UNSIGNED }
 void rd_u64(u64 *x) { READ_UNSIGNED }
 void rd_u128(u128 *x) { READ_UNSIGNED }
+
+#undef READ_CHAR_TO_INTEGER
 #undef READ_SIGNED
 #undef READ_UNSIGNED
 #undef READ_SKIP
+
 __attribute__((destructor)) void _destruct_read_(void) {
     munmap(input, input_size);
     input_size = 0;
 }
+
 #define output_buf_size     1048576
 #define output_integer_size 39
 #define output_block_size   10000
 static char   output[output_buf_size + 1];
 static char   output_block_str[output_block_size * 4 + 1];
-static u128   power10[39];
+static u128   power10[output_integer_size];
 static size_t output_size;
+
 __attribute__((constructor)) void _write_constructor_(void) {
     output_size = 0;
     for (size_t i = 0; i < output_block_size; i++) {
@@ -154,49 +162,69 @@ __attribute__((constructor)) void _write_constructor_(void) {
         }
     }
     power10[0] = 1ull;
-    for (size_t i = 1; i < 39; i++)
+    for (size_t i = 1; i < output_integer_size; i++)
         power10[i] = power10[i - 1] * 10;
 }
+#define SMALL_DIGIT                                                                             \
+    if (n >= power10[9]) return 10;                                                             \
+    if (n >= power10[8]) return 9;                                                              \
+    if (n >= power10[7]) return 8;                                                              \
+    if (n >= power10[6]) return 7;                                                              \
+    if (n >= power10[5]) return 6;                                                              \
+    if (n >= power10[4]) return 5;                                                              \
+    if (n >= power10[3]) return 4;                                                              \
+    if (n >= power10[2]) return 3;                                                              \
+    if (n >= power10[1]) return 2;                                                              \
+    return 1;
+#define MIDDLE_DIGIT                                                                            \
+    if (n >= power10[19]) return 20;                                                            \
+    if (n >= power10[18]) return 19;                                                            \
+    if (n >= power10[17]) return 18;                                                            \
+    if (n >= power10[16]) return 17;                                                            \
+    if (n >= power10[15]) return 16;                                                            \
+    if (n >= power10[14]) return 15;                                                            \
+    if (n >= power10[13]) return 14;                                                            \
+    if (n >= power10[12]) return 13;                                                            \
+    if (n >= power10[11]) return 12;                                                            \
+    return 11;
+#define OUTPUT_BUFFER_EQ_CHECK                                                                  \
+    if (__builtin_expect(output_size == output_buf_size, 0))                                    \
+        flush();
+#define OUTPUT_BUFFER_CHECK                                                                     \
+    if (__builtin_expect(output_size + output_integer_size >= output_buf_size, 0))              \
+        flush();
+#define WRITE_PER_4CHARS                                                                        \
+    size_t digit = get_integer_size_##bit(x);                                                   \
+    size_t len = digit;                                                                         \
+    while (len >= 4) {                                                                          \
+        len -= 4;                                                                               \
+        memcpy(output + output_size + len, output_block_str + (x % output_block_size) * 4, 4);  \
+        x /= output_block_size;                                                                 \
+    }                                                                                           \
+    memcpy(output + output_size, output_block_str + x * 4 + (4 - len), len);                    \
+    output_size += digit;
+#define WRITE_UNSIGNED(bit)                                                                     \
+    OUTPUT_BUFFER_CHECK                                                                         \
+    WRITE_PER_4CHARS
+#define WRITE_SIGNED(bit)                                                                       \
+    OUTPUT_BUFFER_CHECK                                                                         \
+    if (x < 0) {                                                                                \
+        output[output_size++] = '-';                                                            \
+        x = -x;                                                                                 \
+    }                                                                                           \
+    WRITE_PER_4CHARS
 void flush() {
     fwrite(output, 1, output_size, stdout);
     output_size = 0;
 }
 size_t get_integer_size_32(u32 n) {
-    if (n >= power10[9]) return 10;
-    if (n >= power10[8]) return 9;
-    if (n >= power10[7]) return 8;
-    if (n >= power10[6]) return 7;
-    if (n >= power10[5]) return 6;
-    if (n >= power10[4]) return 5;
-    if (n >= power10[3]) return 4;
-    if (n >= power10[2]) return 3;
-    if (n >= power10[1]) return 2;
-    return 1;
+    SMALL_DIGIT
 }
 size_t get_integer_size_64(u64 n) {
-    if (n >= power10[10])
-    {
-        if (n >= power10[19]) return 20;
-        if (n >= power10[18]) return 19;
-        if (n >= power10[17]) return 18;
-        if (n >= power10[16]) return 17;
-        if (n >= power10[15]) return 16;
-        if (n >= power10[14]) return 15;
-        if (n >= power10[13]) return 14;
-        if (n >= power10[12]) return 13;
-        if (n >= power10[11]) return 12;
-        return 11;
+    if (n >= power10[10]) {
+        MIDDLE_DIGIT
     } else {
-        if (n >= power10[9]) return 10;
-        if (n >= power10[8]) return 9;
-        if (n >= power10[7]) return 8;
-        if (n >= power10[6]) return 7;
-        if (n >= power10[5]) return 6;
-        if (n >= power10[4]) return 5;
-        if (n >= power10[3]) return 4;
-        if (n >= power10[2]) return 3;
-        if (n >= power10[1]) return 2;
-        return 1;
+        SMALL_DIGIT
     }
 }
 size_t get_integer_size_128(u128 n) {
@@ -222,32 +250,19 @@ size_t get_integer_size_128(u128 n) {
         if (n >= power10[21]) return 22;
         return 21;
     } else if (n >= power10[10]) {
-        if (n >= power10[19]) return 20;
-        if (n >= power10[18]) return 19;
-        if (n >= power10[17]) return 18;
-        if (n >= power10[16]) return 17;
-        if (n >= power10[15]) return 16;
-        if (n >= power10[14]) return 15;
-        if (n >= power10[13]) return 14;
-        if (n >= power10[12]) return 13;
-        if (n >= power10[11]) return 12;
-        return 11;
+        MIDDLE_DIGIT
     } else {
-        if (n >= power10[9]) return 10;
-        if (n >= power10[8]) return 9;
-        if (n >= power10[7]) return 8;
-        if (n >= power10[6]) return 7;
-        if (n >= power10[5]) return 6;
-        if (n >= power10[4]) return 5;
-        if (n >= power10[3]) return 4;
-        if (n >= power10[2]) return 3;
-        if (n >= power10[1]) return 2;
-        return 1;
+        SMALL_DIGIT
     }
 }
-#define OUTPUT_BUFFER_EQ_CHECK                              \
-    if (__builtin_expect(output_size == output_buf_size, 0))\
-        flush();
+void wt_sp(void) {
+    output[output_size++] = ' ';
+    OUTPUT_BUFFER_EQ_CHECK
+}
+void wt_nl(void) {
+    output[output_size++] = '\n';
+    OUTPUT_BUFFER_EQ_CHECK
+}
 void wt_char(char c) {
     output[output_size++] = c;
     OUTPUT_BUFFER_EQ_CHECK
@@ -258,35 +273,6 @@ void wt_str(const char* s) {
         OUTPUT_BUFFER_EQ_CHECK
     }
 }
-#define OUTPUT_BUFFER_CHECK                                                         \
-    if (__builtin_expect(output_size + output_integer_size >= output_buf_size, 0))  \
-        flush();
-#define WRITE_UNSIGNED(bit)                                                                     \
-    OUTPUT_BUFFER_CHECK                                                                         \
-    size_t digit = get_integer_size_##bit(x);                                                   \
-    size_t len = digit;                                                                         \
-    while (len >= 4) {                                                                          \
-        len -= 4;                                                                               \
-        memcpy(output + output_size + len, output_block_str + (x % output_block_size) * 4, 4);  \
-        x /= output_block_size;                                                                 \
-    }                                                                                           \
-    memcpy(output + output_size, output_block_str + x * 4 + (4 - len), len);                    \
-    output_size += digit;
-#define WRITE_SIGNED(bit)                                                                       \
-    OUTPUT_BUFFER_CHECK                                                                         \
-    if (x < 0) {                                                                                \
-        output[output_size++] = '-';                                                            \
-        x = -x;                                                                                 \
-    }                                                                                           \
-    size_t digit = get_integer_size_##bit(x);                                                   \
-    size_t len = digit;                                                                         \
-    while (len >= 4) {                                                                          \
-        len -= 4;                                                                               \
-        memcpy(output + output_size + len, output_block_str + (x % output_block_size) * 4, 4);  \
-        x /= output_block_size;                                                                 \
-    }                                                                                           \
-    memcpy(output + output_size, output_block_str + x * 4 + (4 - len), len);                    \
-    output_size += digit;
 void wt_uint(unsigned x) { WRITE_UNSIGNED(32) }
 void wt_ull(unsigned long long x) { WRITE_UNSIGNED(64) }
 void wt_u32(u32 x) { WRITE_UNSIGNED(32) }
@@ -299,15 +285,20 @@ void wt_i64(i64 x) { WRITE_SIGNED(64) }
 void wt_i128(i128 x) { WRITE_SIGNED(128) }
 #undef WRITE_SIGNED
 #undef WRITE_UNSIGNED
+#undef WRITE_PER_4CHARS
 #undef OUTPUT_BUFFER_CHECK
 #undef OUTPUT_BUFFER_EQ_CHECK
-#undef output_buf_size
-#undef output_integer_size
+#undef MIDDLE_DIGIT
+#undef SMALL_DIGIT
 #undef output_block_size
+#undef output_integer_size
+#undef output_buf_size
+
 __attribute__((destructor)) void _write_destructor_(void) {
     flush();
     output_size = 0;
 }
+
 #endif
 
 #if defined(USE_IO)
@@ -318,56 +309,56 @@ __attribute__((destructor)) void _write_destructor_(void) {
 #define GetChar getchar_unlocked
 #define PutChar putchar_unlocked
 #endif
-#define INPUT_UINT(bit)                         \
-    u##bit c, x = 0;                            \
-    while (c = GetChar(), c < '0' || c > '9') { \
-    }                                           \
-    while ('/' < c && c < ':') {                \
-        x = x * 10 + c - '0';                   \
-        c = GetChar();                          \
-    }                                           \
+#define INPUT_UINT(bit)                                                                         \
+    u##bit c, x = 0;                                                                            \
+    while (c = GetChar(), c < '0' || c > '9') {                                                 \
+    }                                                                                           \
+    while ('/' < c && c < ':') {                                                                \
+        x = x * 10 + c - '0';                                                                   \
+        c = GetChar();                                                                          \
+    }                                                                                           \
     return x
 u32 in_u32(void) { INPUT_UINT(32); }
 u64 in_u64(void) { INPUT_UINT(64); }
 u128 in_u128(void) { INPUT_UINT(128); }
-#define INPUT_SINT(bit)                         \
-    i##bit c, x = 0, f = 1;                     \
-    while (c = GetChar(), c < '0' || c > '9') { \
-        if (c == '-') {                         \
-            f = -f;                             \
-        }                                       \
-    }                                           \
-    while ('/' < c && c < ':') {                \
-        x = x * 10 + c - '0';                   \
-        c = GetChar();                          \
-    }                                           \
+#define INPUT_SINT(bit)                                                                         \
+    i##bit c, x = 0, f = 1;                                                                     \
+    while (c = GetChar(), c < '0' || c > '9') {                                                 \
+        if (c == '-') {                                                                         \
+            f = -f;                                                                             \
+        }                                                                                       \
+    }                                                                                           \
+    while ('/' < c && c < ':') {                                                                \
+        x = x * 10 + c - '0';                                                                   \
+        c = GetChar();                                                                          \
+    }                                                                                           \
     return f * x
 i32 in_i32(void) { INPUT_SINT(32); }
 i64 in_i64(void) { INPUT_SINT(64); }
 i128 in_i128(void) { INPUT_SINT(128); }
-#define OUTPUT_UINT(bit)    \
-    if (x >= 10) {          \
-        out_u##bit(x / 10); \
-    }                       \
+#define OUTPUT_UINT(bit)                                                                        \
+    if (x >= 10) {                                                                              \
+        out_u##bit(x / 10);                                                                     \
+    }                                                                                           \
     PutChar(x - x / 10 * 10 + '0')
 void out_u32(u32 x) { OUTPUT_UINT(32); }
 void out_u64(u64 x) { OUTPUT_UINT(64); }
 void out_u128(u128 x) { OUTPUT_UINT(128); }
-#define OUTPUT_SINT(bit) \
-    if (x < 0) {         \
-        PutChar('-');    \
-        x = -x;          \
-    }                    \
+#define OUTPUT_SINT(bit)                                                                        \
+    if (x < 0) {                                                                                \
+        PutChar('-');                                                                           \
+        x = -x;                                                                                 \
+    }                                                                                           \
     out_u##bit((u##bit)x)
 void out_i32(i32 x) { OUTPUT_SINT(32); }
 void out_i64(i64 x) { OUTPUT_SINT(64); }
 void out_i128(i128 x) { OUTPUT_SINT(128); }
 void newline(void) { PutChar('\n'); }
 void space(void) { PutChar(' '); }
-#define OUTPUT_BINARY(bit)                                 \
-    u##bit mask = (u##bit)1 << (sizeof(v) * CHAR_BIT - 1); \
-    do {                                                   \
-        PutChar(mask &v ? '1' : '0');                      \
+#define OUTPUT_BINARY(bit)                                                                      \
+    u##bit mask = (u##bit)1 << (sizeof(v) * CHAR_BIT - 1);                                      \
+    do {                                                                                        \
+        PutChar(mask &v ? '1' : '0');                                                           \
     } while (mask >>= 1)
 void printb_32bit(u32 v) { OUTPUT_BINARY(32); }
 void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
@@ -384,33 +375,33 @@ void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
 #if defined(USE_DM32) || defined(USE_DM64) || defined(USE_M32) || defined(USE_M64) || defined(USE_B32) || defined(USE_B64)
 typedef struct { i32 a, b; u32 d; } Bezout32;
 typedef struct { i64 a, b; u64 d; } Bezout64;
-#define BEZOUT(bit)                                                     \
-    u##bit t;                                                           \
-    bool swap = x < y;                                                  \
-    if (swap) t = x, x = y, y = t;                                      \
-    if (y == 0)                                                         \
-    {                                                                   \
-        if (x == 0)                                                     \
-            return (Bezout##bit) {0, 0, 0};                             \
-        else if (swap)                                                  \
-            return (Bezout##bit) {0, 1, x};                             \
-        else                                                            \
-            return (Bezout##bit) {1, 0, x};                             \
-    }                                                                   \
-    i##bit s0 = 1, s1 = 0, t0 = 0, t1 = 1;                              \
-    while (true)                                                        \
-    {                                                                   \
-        u##bit q = x / y, r = x % y;                                    \
-        if (r == 0)                                                     \
-        {                                                               \
-            if (swap)                                                   \
-                return (Bezout##bit) {t1, s1, y};                       \
-            else                                                        \
-                return (Bezout##bit) {s1, t1, y};                       \
-        }                                                               \
-        i##bit s2 = s0 - (i##bit)(q) * s1, t2 = t0 - (i##bit)(q) * t1;  \
-        x = y, y = r;                                                   \
-        s0 = s1, s1 = s2, t0 = t1, t1 = t2;                             \
+#define BEZOUT(bit)                                                                             \
+    u##bit t;                                                                                   \
+    bool swap = x < y;                                                                          \
+    if (swap) t = x, x = y, y = t;                                                              \
+    if (y == 0)                                                                                 \
+    {                                                                                           \
+        if (x == 0)                                                                             \
+            return (Bezout##bit) {0, 0, 0};                                                     \
+        else if (swap)                                                                          \
+            return (Bezout##bit) {0, 1, x};                                                     \
+        else                                                                                    \
+            return (Bezout##bit) {1, 0, x};                                                     \
+    }                                                                                           \
+    i##bit s0 = 1, s1 = 0, t0 = 0, t1 = 1;                                                      \
+    while (true)                                                                                \
+    {                                                                                           \
+        u##bit q = x / y, r = x % y;                                                            \
+        if (r == 0)                                                                             \
+        {                                                                                       \
+            if (swap)                                                                           \
+                return (Bezout##bit) {t1, s1, y};                                               \
+            else                                                                                \
+                return (Bezout##bit) {s1, t1, y};                                               \
+        }                                                                                       \
+        i##bit s2 = s0 - (i##bit)(q) * s1, t2 = t0 - (i##bit)(q) * t1;                          \
+        x = y, y = r;                                                                           \
+        s0 = s1, s1 = s2, t0 = t1, t1 = t2;                                                     \
     }
 Bezout32 bezout32(u32 x, u32 y) { BEZOUT(32); }
 Bezout64 bezout64(u64 x, u64 y) { BEZOUT(64); }
@@ -546,18 +537,18 @@ u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull; while (k > 0) { if (k & 1) ret = mul
 #endif                // B64
 
 #if defined(USE_GCD)  // GCD
-#define BINARY_GCD(bit)             \
-    if (!a || !b)                   \
-        return a | b;               \
-    u##bit t, s = ctz##bit(a | b);  \
-    a >>= ctz##bit(a);              \
-    do                              \
-    {                               \
-        b >>= ctz##bit(b);          \
-        if (a > b)                  \
-            t = a, a = b, b = t;    \
-        b -= a;                     \
-    } while (b);                    \
+#define BINARY_GCD(bit)                                                                         \
+    if (!a || !b)                                                                               \
+        return a | b;                                                                           \
+    u##bit t, s = ctz##bit(a | b);                                                              \
+    a >>= ctz##bit(a);                                                                          \
+    do                                                                                          \
+    {                                                                                           \
+        b >>= ctz##bit(b);                                                                      \
+        if (a > b)                                                                              \
+            t = a, a = b, b = t;                                                                \
+        b -= a;                                                                                 \
+    } while (b);                                                                                \
     return a << s
 u32 gcd32(u32 a, u32 b) { BINARY_GCD(32); }
 u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
@@ -565,101 +556,44 @@ u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
 #endif                // GCD
 
 #if defined(USE_RNGs) // RNGs
+// clang-format off
 
 #if defined(ONLINE)
-u32 rand_32(void) {
-    static u64 lcg_state = 14534622846793005ull;
-    lcg_state            = 6364136223846793005ull * lcg_state + 1442695040888963407ull;
-    return (u32)lcg_state;
-}
-u32 randrange_32(u32 l, u32 r) {
-    return l + rand_32() % (r - l + 1);
-}
-f32 randf_32(void) {
-    u32 a = 0x3F800000u | (rand_32() >> 9);
-    return (*((f32 *)(&a))) - 1;
-}
-u64 rand_64(void) {
-    static u64 msws_state1 = 0;
-    static u64 msws_state2 = 0;
-    static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul;
-    static u64 msws_state4 = 0;
-    static u64 msws_state5 = 0;
-    static u64 msws_state6 = 0x278c5a4d8419fe6bul;
-    u64        ret;
-    msws_state1 *= msws_state1;
-    ret         = msws_state1 += (msws_state2 += msws_state3);
-    msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32);
-    msws_state4 *= msws_state4;
-    msws_state4 += (msws_state5 += msws_state6);
-    msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32);
-    return ret ^ msws_state4;
-}
-u64 randrange_64(u64 l, u64 r) {
-    return l + rand_64() % (r - l + 1);
-}
-f64 randf_64(void) {
-    u64 a = 0x3FF0000000000000ull | (rand_64() >> 12);
-    return (*((f64 *)(&a))) - 1;
-}
+u32 rand_32(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
+u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
+f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
+u64 rand_64(void) { static u64 msws_state1 = 0; static u64 msws_state2 = 0; static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul; static u64 msws_state4 = 0; static u64 msws_state5 = 0; static u64 msws_state6 = 0x278c5a4d8419fe6bul; u64 ret; msws_state1 *= msws_state1; ret = msws_state1 += (msws_state2 += msws_state3); msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32); msws_state4 *= msws_state4; msws_state4 += (msws_state5 += msws_state6); msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32); return ret ^ msws_state4; }
+u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
+f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
 #else
-u32 rand_32(void) {
-    static u64 pcg_state = 0x853c49e6748fea9bull;
-    u64        t         = pcg_state;
-    pcg_state            = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull;
-    u32 sh               = ((t >> 18u) ^ t) >> 27u;
-    u32 ro               = t >> 59u;
-    return (sh >> ro) | (sh << ((-ro) & 31));
-}
-u32 randrange_32(u32 l, u32 r) {
-    return l + rand_32() % (r - l + 1);
-}
-f32 randf_32(void) {
-    u32 a = 0x3F800000u | (rand_32() >> 9);
-    return (*((f32 *)(&a))) - 1;
-}
-u64 rand_64(void) {
-    static u64 xrsr128ss_state1 = 0x1ull;
-    static u64 xrsr128ss_state2 = 0x2ull;
-    const u64  s0               = xrsr128ss_state1;
-    u64        s1               = xrsr128ss_state2;
-    const u64  ret              = rotl64(s0 * 5, 7) * 9;
-    s1 ^= s0;
-    xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16);
-    xrsr128ss_state2 = rotl64(s1, 37);
-    return ret;
-}
-u64 randrange_64(u64 l, u64 r) {
-    return l + rand_64() % (r - l + 1);
-}
-f64 randf_64(void) {
-    u64 a = 0x3FF0000000000000ull | (rand_64() >> 12);
-    return (*((f64 *)(&a))) - 1;
-}
+u32 rand_32(void) { static u64 pcg_state = 0x853c49e6748fea9bull; u64 t = pcg_state; pcg_state = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull; u32 sh = ((t >> 18u) ^ t) >> 27u; u32 ro = t >> 59u; return (sh >> ro) | (sh << ((-ro) & 31)); }
+u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
+f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
+u64 rand_64(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr128ss_state2 = 0x2ull; const u64 s0 = xrsr128ss_state1; u64 s1 = xrsr128ss_state2; const u64 ret = rotl64(s0 * 5, 7) * 9; s1 ^= s0; xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16); xrsr128ss_state2 = rotl64(s1, 37); return ret; }
+u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
+f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
 #endif
 
+// clang-format on
 #endif                // RNGs
 
 #if defined(USE_COMBSORT) // COMBSORT
-#define COMBSORT11(bit)                                  \
-    int g = a_len;                                       \
-    u##bit t;                                            \
-    while (true)                                         \
-    {                                                    \
-        bool flag = 1;                                   \
-        g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1; \
-        if (g == 9 || g == 10)                           \
-            g = 11;                                      \
-        for (int i = 0; i + g < a_len; i++)              \
-        {                                                \
-            if (a[i] > a[i + g])                         \
-            {                                            \
-                t = a[i], a[i] = a[i + g], a[i + g] = t; \
-                flag = false;                            \
-            }                                            \
-        }                                                \
-        if (g == 1 && flag)                              \
-            break;                                       \
+#define COMBSORT11(bit)                                                                         \
+    int g = a_len;                                                                              \
+    u##bit t;                                                                                   \
+    while (true) {                                                                              \
+        bool flag = 1;                                                                          \
+        g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1;                                        \
+        if (g == 9 || g == 10)                                                                  \
+            g = 11;                                                                             \
+        for (int i = 0; i + g < a_len; i++) {                                                   \
+            if (a[i] > a[i + g]) {                                                              \
+                t = a[i], a[i] = a[i + g], a[i + g] = t;                                        \
+                flag = false;                                                                   \
+            }                                                                                   \
+        }                                                                                       \
+        if (g == 1 && flag)                                                                     \
+            break;                                                                              \
     }
 void combsort11_32(int a_len, u32 *a) { COMBSORT11(32) }
 void combsort11_64(int a_len, u64 *a) { COMBSORT11(64) }
@@ -667,16 +601,14 @@ void combsort11_64(int a_len, u64 *a) { COMBSORT11(64) }
 #endif                    // COMBSORT
 
 #if defined(USE_QUADRATIC_RESIDUE) // QUADRATIC_RESIDUE
-bool euler_criterion(u32 a, u32 mod)
-{
+bool euler_criterion(u32 a, u32 mod) {
 #if defined(USE_M32)
     return pow_m32(to_m32(a), (mod - 1) >> 1) == r1_m32;
 #elif defined(USE_B32)
     return pow_b32(a, (mod - 1) >> 1) == 1;
 #else
     u32 ret = 1, b = a, k = (mod - 1) >> 1;
-    while (k)
-    {
+    while (k) {
         if (k & 1)
             ret = (u64)b * ret % mod;
         b = (u64)b * b % mod;
@@ -685,35 +617,27 @@ bool euler_criterion(u32 a, u32 mod)
     return ret == 1;
 #endif
 }
-int legendre_symbol(u32 a, u32 mod)
-{
+int legendre_symbol(u32 a, u32 mod) {
     /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
     int ret;
 #if defined(USE_M32)
     if (mr32((u64)a) == 0)
         ret = 0;
-    else if (euler_criterion(a, mod))
-        ret = 1;
-    else
-        ret = -1;
 #else
     if (a == 0)
         ret = 0;
+#endif
     else if (euler_criterion(a, mod))
         ret = 1;
     else
         ret = -1;
-#endif
     return ret;
 }
-int jacobi_symbol(long long a, long long n)
-{
+int jacobi_symbol(long long a, long long n) {
     int j = 1;
     long long t;
-    while (a)
-    {
-        if (a < 0)
-        {
+    while (a) {
+        if (a < 0) {
             a = -a;
             if ((n & 3) == 3)
                 j = -j;
@@ -734,40 +658,37 @@ int jacobi_symbol(long long a, long long n)
 #endif                             // QUADRATIC_RESIDUE
 
 #if defined(USE_POW_ROOT) // POW_ROOT
-#define IPOW(bit)   \
-    u##bit p = 1;   \
-    while (k)       \
-    {               \
-        if (k & 1)  \
-            p *= n; \
-        k >>= 1;    \
-        if (k)      \
-            n *= n; \
-    }               \
+#define IPOW(bit)                                                                               \
+    u##bit p = 1;                                                                               \
+    while (k) {                                                                                 \
+        if (k & 1)                                                                              \
+            p *= n;                                                                             \
+        k >>= 1;                                                                                \
+        if (k)                                                                                  \
+            n *= n;                                                                             \
+    }                                                                                           \
     return p
 u32 ipow32(u32 n, u64 k) { IPOW(32); }
 u64 ipow64(u64 n, u64 k) { IPOW(64); }
 #undef IPOW
 
-#define SPOW(bit)                                                                          \
-    if (y == 0)                                                                            \
-        return 1;                                                                          \
-    u##bit res = 1;                                                                        \
-    while (y)                                                                              \
-    {                                                                                      \
-        if (y & 1)                                                                         \
-            res = __builtin_mul_overflow_p(res, x, (u##bit)0) ? UINT##bit##_MAX : res * x; \
-        x = __builtin_mul_overflow_p(x, x, (u##bit)0) ? UINT##bit##_MAX : x * x;           \
-        y >>= 1;                                                                           \
-    }                                                                                      \
+#define SPOW(bit)                                                                               \
+    if (y == 0)                                                                                 \
+        return 1;                                                                               \
+    u##bit res = 1;                                                                             \
+    while (y) {                                                                                 \
+        if (y & 1)                                                                              \
+            res = __builtin_mul_overflow_p(res, x, (u##bit)0) ? UINT##bit##_MAX : res * x;      \
+        x = __builtin_mul_overflow_p(x, x, (u##bit)0) ? UINT##bit##_MAX : x * x;                \
+        y >>= 1;                                                                                \
+    }                                                                                           \
     return res
 
 u32 spow_u32(u32 x, u32 y) { SPOW(32); }
 u64 spow_u64(u64 x, u64 y) { SPOW(64); }
 #undef SPOW
 
-u64 isqrt(u64 n)
-{
+u64 isqrt(u64 n) {
     u64 root;
     if (n >= (u64)(18446744065119617025ull))
         return (u64)(4294967295ull);
@@ -778,26 +699,22 @@ u64 isqrt(u64 n)
         root++;
     return root;
 }
-u64 icbrt(u64 n)
-{
+u64 icbrt(u64 n) {
     u64 b, root = 0;
     int s = 63;
     if (n >= (u64)(18446724184312856125ull))
         return (u64)(2642245ull);
-    for (; s >= 0; s -= 3)
-    {
+    for (; s >= 0; s -= 3) {
         root += root;
         b = 3 * root * (root + 1) + 1;
-        if ((n >> s) >= b)
-        {
+        if ((n >> s) >= b) {
             n -= b << s;
             root++;
         }
     }
     return root;
 }
-u64 floor_kth_root_integer(u64 a, u64 k)
-{
+u64 floor_kth_root_integer(u64 a, u64 k) {
     if (a <= 1 || k == 1)
         return a;
     if (k >= 64)
@@ -811,8 +728,7 @@ u64 floor_kth_root_integer(u64 a, u64 k)
         res++;
     return res;
 }
-bool is_perfect_square(u64 n)
-{
+bool is_perfect_square(u64 n) {
     u32 m = n & 127;
     if ((m * 0x8bc40d7d) & (m * 0xa1e2f5d1) & 0x14020a) return false;
     m = n % 240;
@@ -820,8 +736,7 @@ bool is_perfect_square(u64 n)
     m = isqrt(n);
     return (u64)m * m == n;
 }
-bool is_perfect_cube(u64 n)
-{
+bool is_perfect_cube(u64 n) {
     u32 m;
     m = n % 117;
     if ((m * 833230740) & (m * 120676722) & 813764715) return false;
@@ -834,8 +749,7 @@ bool is_perfect_cube(u64 n)
     m = icbrt(n);
     return (u64)m * m * m == n;
 }
-bool is_perfect_fifth(u64 n)
-{
+bool is_perfect_fifth(u64 n) {
     u64 m;
     if ((n & 3) == 2) return false;
     m = n % 88;
@@ -847,8 +761,7 @@ bool is_perfect_fifth(u64 n)
     m = floor_kth_root_integer(n, 5);
     return m * m * m * m * m == n;
 }
-bool is_perfect_seventh(u64 n)
-{
+bool is_perfect_seventh(u64 n) {
     u64 m;
     m = n & 511;
     if ((m * 97259473) & (m * 51311663) & 894)
