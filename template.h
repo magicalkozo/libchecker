@@ -1,13 +1,12 @@
 // #define ONLINE
-#define USE_IO
+#define OFFLINE
+#define USE_GCD
 #define USE_DM32
 #define USE_DM64
 #define USE_M32
 #define USE_M64
 #define USE_B32
 #define USE_B64
-#define USE_GCD
-#define USE_RNGs
 #define USE_COMBSORT
 #define USE_QUADRATIC_RESIDUE
 #define USE_POW_ROOT
@@ -39,6 +38,7 @@
 #include <unistd.h>
 #endif
 
+// clang-format off
 typedef int8_t      i8;
 typedef int16_t     i16;
 typedef int32_t     i32;
@@ -52,7 +52,6 @@ typedef __uint128_t u128;
 typedef float       f32;
 typedef double      f64;
 
-// clang-format off
 typedef struct { i32 a, b; } Pair_i32;
 typedef struct { i64 a, b; } Pair_i64;
 typedef struct { u32 a, b; } Pair_u32;
@@ -90,14 +89,18 @@ typedef struct { u64 a, b, c, d; } Quadruple_u64;
 #define rotl64(x, r)     (rotr64((x), (-(r))))
 
 #if defined(ONLINE)
-static char  *input;
+
+#pragma region input
+
+static char *input;
 static size_t input_size, input_string_size;
-__attribute__((constructor))void _construct_read_(void) {
+
+__attribute__((constructor)) void _construct_read_(void) {
     struct stat st;
     fstat(0, &st);
     input_string_size = st.st_size - 1;
-    input_size = st.st_size + 64;
-    input      = (char *)mmap(0, input_size, PROT_READ, MAP_SHARED | MAP_POPULATE, 0, 0);
+    input_size = st.st_size + 1;
+    input = (char *)mmap(0, input_size, PROT_READ, MAP_SHARED | MAP_POPULATE, 0, 0);
     if (input == MAP_FAILED)
         __builtin_trap();
     madvise(input, input_size, MADV_SEQUENTIAL);
@@ -107,12 +110,15 @@ __attribute__((constructor))void _construct_read_(void) {
     char c = *input;                                                                            \
     if (c < '!')                                                                                \
         *input++, c = *input;
+
 #define READ_CHAR_TO_INTEGER                                                                    \
     for (*x = *input++ & 15; (c = *input++) >= '0';)                                            \
         *x = *x * 10 + (c & 15);
+
 #define READ_UNSIGNED                                                                           \
     READ_SKIP                                                                                   \
     READ_CHAR_TO_INTEGER
+
 #define READ_SIGNED                                                                             \
     READ_SKIP                                                                                   \
     bool flag = false;                                                                          \
@@ -134,27 +140,32 @@ void rd_u32(u32 *x) { READ_UNSIGNED }
 void rd_u64(u64 *x) { READ_UNSIGNED }
 void rd_u128(u128 *x) { READ_UNSIGNED }
 
-#undef READ_CHAR_TO_INTEGER
 #undef READ_SIGNED
 #undef READ_UNSIGNED
+#undef READ_CHAR_TO_INTEGER
 #undef READ_SKIP
 
 __attribute__((destructor)) void _destruct_read_(void) {
     munmap(input, input_size);
-    input_size = 0;
+    input_size = input_string_size = 0;
 }
 
-#define output_buf_size     1048576
-#define output_integer_size 39
-#define output_block_size   10000
-static char   output[output_buf_size + 1];
-static char   output_block_str[output_block_size * 4 + 1];
-static u128   power10[output_integer_size];
+#pragma endregion input
+
+#pragma region output
+
+#define O_BUF_SIZE 1048576
+#define O_BLOCK_SIZE 10000
+#define O_INT_SIZE 39
+
+static char output[O_BUF_SIZE + 1];
+static char output_block_str[O_BLOCK_SIZE * 4 + 1];
+static u128 power10[O_INT_SIZE];
 static size_t output_size;
 
-__attribute__((constructor)) void _write_constructor_(void) {
+__attribute__((constructor)) void _construct_write_(void) {
     output_size = 0;
-    for (size_t i = 0; i < output_block_size; i++) {
+    for (size_t i = 0; i < O_BLOCK_SIZE; i++) {
         size_t j = 4, k = i;
         while (j--) {
             output_block_str[i * 4 + j] = k % 10 + '0';
@@ -162,10 +173,11 @@ __attribute__((constructor)) void _write_constructor_(void) {
         }
     }
     power10[0] = 1ull;
-    for (size_t i = 1; i < output_integer_size; i++)
+    for (size_t i = 1; i < O_INT_SIZE; i++)
         power10[i] = power10[i - 1] * 10;
 }
-#define SMALL_DIGIT                                                                             \
+
+#define DIGIT_BLOCK1                                                                            \
     if (n >= power10[9]) return 10;                                                             \
     if (n >= power10[8]) return 9;                                                              \
     if (n >= power10[7]) return 8;                                                              \
@@ -176,7 +188,7 @@ __attribute__((constructor)) void _write_constructor_(void) {
     if (n >= power10[2]) return 3;                                                              \
     if (n >= power10[1]) return 2;                                                              \
     return 1;
-#define MIDDLE_DIGIT                                                                            \
+#define DIGIT_BLOCK2                                                                            \
     if (n >= power10[19]) return 20;                                                            \
     if (n >= power10[18]) return 19;                                                            \
     if (n >= power10[17]) return 18;                                                            \
@@ -187,74 +199,86 @@ __attribute__((constructor)) void _write_constructor_(void) {
     if (n >= power10[12]) return 13;                                                            \
     if (n >= power10[11]) return 12;                                                            \
     return 11;
+#define DIGIT_BLOCK3                                                                            \
+    if (n >= power10[29]) return 30;                                                            \
+    if (n >= power10[28]) return 29;                                                            \
+    if (n >= power10[27]) return 28;                                                            \
+    if (n >= power10[26]) return 27;                                                            \
+    if (n >= power10[25]) return 26;                                                            \
+    if (n >= power10[24]) return 25;                                                            \
+    if (n >= power10[23]) return 24;                                                            \
+    if (n >= power10[22]) return 23;                                                            \
+    if (n >= power10[21]) return 22;                                                            \
+    return 21;
+#define DIGIT_BLOCK4                                                                            \
+    if (n >= power10[38]) return 39;                                                            \
+    if (n >= power10[37]) return 38;                                                            \
+    if (n >= power10[36]) return 37;                                                            \
+    if (n >= power10[35]) return 36;                                                            \
+    if (n >= power10[34]) return 35;                                                            \
+    if (n >= power10[33]) return 34;                                                            \
+    if (n >= power10[32]) return 33;                                                            \
+    if (n >= power10[31]) return 32;                                                            \
+    return 31;
+
 #define OUTPUT_BUFFER_EQ_CHECK                                                                  \
-    if (__builtin_expect(output_size == output_buf_size, 0))                                    \
+    if (__builtin_expect(output_size == O_BUF_SIZE, 0))                                         \
         flush();
+
 #define OUTPUT_BUFFER_CHECK                                                                     \
-    if (__builtin_expect(output_size + output_integer_size >= output_buf_size, 0))              \
+    if (__builtin_expect(output_size + O_INT_SIZE >= O_BUF_SIZE, 0))                            \
         flush();
-#define WRITE_PER_4CHARS                                                                        \
+
+#define WRITE_PER_4CHARS(bit)                                                                   \
     size_t digit = get_integer_size_##bit(x);                                                   \
     size_t len = digit;                                                                         \
     while (len >= 4) {                                                                          \
         len -= 4;                                                                               \
-        memcpy(output + output_size + len, output_block_str + (x % output_block_size) * 4, 4);  \
-        x /= output_block_size;                                                                 \
+        memcpy(output + output_size + len, output_block_str + (x % O_BLOCK_SIZE) * 4, 4);       \
+        x /= O_BLOCK_SIZE;                                                                      \
     }                                                                                           \
     memcpy(output + output_size, output_block_str + x * 4 + (4 - len), len);                    \
     output_size += digit;
+
 #define WRITE_UNSIGNED(bit)                                                                     \
     OUTPUT_BUFFER_CHECK                                                                         \
-    WRITE_PER_4CHARS
+    WRITE_PER_4CHARS(bit)
+
 #define WRITE_SIGNED(bit)                                                                       \
     OUTPUT_BUFFER_CHECK                                                                         \
     if (x < 0) {                                                                                \
         output[output_size++] = '-';                                                            \
         x = -x;                                                                                 \
     }                                                                                           \
-    WRITE_PER_4CHARS
+    WRITE_PER_4CHARS(bit)
+
 void flush() {
     fwrite(output, 1, output_size, stdout);
     output_size = 0;
 }
+
 size_t get_integer_size_32(u32 n) {
-    SMALL_DIGIT
+    DIGIT_BLOCK1
 }
 size_t get_integer_size_64(u64 n) {
     if (n >= power10[10]) {
-        MIDDLE_DIGIT
+        DIGIT_BLOCK2
     } else {
-        SMALL_DIGIT
+        DIGIT_BLOCK1
     }
 }
 size_t get_integer_size_128(u128 n) {
     if (n >= power10[30]) {
-        if (n >= power10[38]) return 39;
-        if (n >= power10[37]) return 38;
-        if (n >= power10[36]) return 37;
-        if (n >= power10[35]) return 36;
-        if (n >= power10[34]) return 35;
-        if (n >= power10[33]) return 34;
-        if (n >= power10[32]) return 33;
-        if (n >= power10[31]) return 32;
-        return 31;
+        DIGIT_BLOCK4
     } else if (n >= power10[20]) {
-        if (n >= power10[29]) return 30;
-        if (n >= power10[28]) return 29;
-        if (n >= power10[27]) return 28;
-        if (n >= power10[26]) return 27;
-        if (n >= power10[25]) return 26;
-        if (n >= power10[24]) return 25;
-        if (n >= power10[23]) return 24;
-        if (n >= power10[22]) return 23;
-        if (n >= power10[21]) return 22;
-        return 21;
+        DIGIT_BLOCK3
     } else if (n >= power10[10]) {
-        MIDDLE_DIGIT
+        DIGIT_BLOCK2
     } else {
-        SMALL_DIGIT
+        DIGIT_BLOCK1
     }
 }
+
 void wt_sp(void) {
     output[output_size++] = ' ';
     OUTPUT_BUFFER_EQ_CHECK
@@ -283,25 +307,30 @@ void wt_ll(long long x) { WRITE_SIGNED(64) }
 void wt_i32(i32 x) { WRITE_SIGNED(32) }
 void wt_i64(i64 x) { WRITE_SIGNED(64) }
 void wt_i128(i128 x) { WRITE_SIGNED(128) }
+
 #undef WRITE_SIGNED
 #undef WRITE_UNSIGNED
 #undef WRITE_PER_4CHARS
 #undef OUTPUT_BUFFER_CHECK
 #undef OUTPUT_BUFFER_EQ_CHECK
-#undef MIDDLE_DIGIT
-#undef SMALL_DIGIT
-#undef output_block_size
-#undef output_integer_size
-#undef output_buf_size
+#undef DIGIT_BLOCK4
+#undef DIGIT_BLOCK3
+#undef DIGIT_BLOCK2
+#undef DIGIT_BLOCK1
+#undef O_BUF_SIZE
+#undef O_BLOCK_SIZE
+#undef O_INT_SIZE
 
-__attribute__((destructor)) void _write_destructor_(void) {
+__attribute__((destructor)) void _destruct_write_(void) {
     flush();
     output_size = 0;
 }
 
+#pragma endregion output
+
 #endif
 
-#if defined(USE_IO)
+#if defined(OFFLINE)
 #if defined(_WIN32)
 #define GetChar _getchar_nolock
 #define PutChar _putchar_nolock
@@ -321,6 +350,7 @@ __attribute__((destructor)) void _write_destructor_(void) {
 u32 in_u32(void) { INPUT_UINT(32); }
 u64 in_u64(void) { INPUT_UINT(64); }
 u128 in_u128(void) { INPUT_UINT(128); }
+#undef INPUT_UINT
 #define INPUT_SINT(bit)                                                                         \
     i##bit c, x = 0, f = 1;                                                                     \
     while (c = GetChar(), c < '0' || c > '9') {                                                 \
@@ -336,6 +366,7 @@ u128 in_u128(void) { INPUT_UINT(128); }
 i32 in_i32(void) { INPUT_SINT(32); }
 i64 in_i64(void) { INPUT_SINT(64); }
 i128 in_i128(void) { INPUT_SINT(128); }
+#undef INPUT_SINT
 #define OUTPUT_UINT(bit)                                                                        \
     if (x >= 10) {                                                                              \
         out_u##bit(x / 10);                                                                     \
@@ -344,6 +375,7 @@ i128 in_i128(void) { INPUT_SINT(128); }
 void out_u32(u32 x) { OUTPUT_UINT(32); }
 void out_u64(u64 x) { OUTPUT_UINT(64); }
 void out_u128(u128 x) { OUTPUT_UINT(128); }
+#undef OUTPUT_UINT
 #define OUTPUT_SINT(bit)                                                                        \
     if (x < 0) {                                                                                \
         PutChar('-');                                                                           \
@@ -353,6 +385,7 @@ void out_u128(u128 x) { OUTPUT_UINT(128); }
 void out_i32(i32 x) { OUTPUT_SINT(32); }
 void out_i64(i64 x) { OUTPUT_SINT(64); }
 void out_i128(i128 x) { OUTPUT_SINT(128); }
+#undef OUTPUT_SINT
 void newline(void) { PutChar('\n'); }
 void space(void) { PutChar(' '); }
 #define OUTPUT_BINARY(bit)                                                                      \
@@ -362,16 +395,46 @@ void space(void) { PutChar(' '); }
     } while (mask >>= 1)
 void printb_32bit(u32 v) { OUTPUT_BINARY(32); }
 void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
-#undef GetChar
-#undef PutChar
-#undef INPUT_UINT
-#undef INPUT_SINT
-#undef OUTPUT_UINT
-#undef OUTPUT_SINT
 #undef OUTPUT_BINARY
+#undef PutChar
+#undef GetChar
 #endif
 
-// clang-format off
+#if defined(ONLINE)
+u32 rand_32(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
+u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
+f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
+u64 rand_64(void) { static u64 msws_state1 = 0; static u64 msws_state2 = 0; static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul; static u64 msws_state4 = 0; static u64 msws_state5 = 0; static u64 msws_state6 = 0x278c5a4d8419fe6bul; u64 ret; msws_state1 *= msws_state1; ret = msws_state1 += (msws_state2 += msws_state3); msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32); msws_state4 *= msws_state4; msws_state4 += (msws_state5 += msws_state6); msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32); return ret ^ msws_state4; }
+u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
+f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
+#else
+u32 rand_32(void) { static u64 pcg_state = 0x853c49e6748fea9bull; u64 t = pcg_state; pcg_state = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull; u32 sh = ((t >> 18u) ^ t) >> 27u; u32 ro = t >> 59u; return (sh >> ro) | (sh << ((-ro) & 31)); }
+u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
+f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
+u64 rand_64(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr128ss_state2 = 0x2ull; const u64 s0 = xrsr128ss_state1; u64 s1 = xrsr128ss_state2; const u64 ret = rotl64(s0 * 5, 7) * 9; s1 ^= s0; xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16); xrsr128ss_state2 = rotl64(s1, 37); return ret; }
+u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
+f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
+#endif
+
+#if defined(USE_GCD)  // GCD
+#define BINARY_GCD(bit)                                                                         \
+    if (!a || !b)                                                                               \
+        return a | b;                                                                           \
+    u##bit t, s = ctz##bit(a | b);                                                              \
+    a >>= ctz##bit(a);                                                                          \
+    do                                                                                          \
+    {                                                                                           \
+        b >>= ctz##bit(b);                                                                      \
+        if (a > b)                                                                              \
+            t = a, a = b, b = t;                                                                \
+        b -= a;                                                                                 \
+    } while (b);                                                                                \
+    return a << s
+u32 gcd32(u32 a, u32 b) { BINARY_GCD(32); }
+u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
+#undef BINARY_GCD
+#endif                // GCD
+
 #if defined(USE_DM32) || defined(USE_DM64) || defined(USE_M32) || defined(USE_M64) || defined(USE_B32) || defined(USE_B64)
 typedef struct { i32 a, b; u32 d; } Bezout32;
 typedef struct { i64 a, b; u64 d; } Bezout64;
@@ -535,47 +598,6 @@ u64 shl_b64(u64 a) { return (a <<= 1) >= m_b64 ? a - m_b64 : a; }
 u64 shr_b64(u64 a) { return (a & 1) ? ((a >> 1) + (m_b64 >> 1) + 1) : (a >> 1); }
 u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull; while (k > 0) { if (k & 1) ret = mul_b64(ret, a); a = squ_b64(a); k >>= 1; } return ret; }
 #endif                // B64
-
-#if defined(USE_GCD)  // GCD
-#define BINARY_GCD(bit)                                                                         \
-    if (!a || !b)                                                                               \
-        return a | b;                                                                           \
-    u##bit t, s = ctz##bit(a | b);                                                              \
-    a >>= ctz##bit(a);                                                                          \
-    do                                                                                          \
-    {                                                                                           \
-        b >>= ctz##bit(b);                                                                      \
-        if (a > b)                                                                              \
-            t = a, a = b, b = t;                                                                \
-        b -= a;                                                                                 \
-    } while (b);                                                                                \
-    return a << s
-u32 gcd32(u32 a, u32 b) { BINARY_GCD(32); }
-u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
-#undef BINARY_GCD
-#endif                // GCD
-
-#if defined(USE_RNGs) // RNGs
-// clang-format off
-
-#if defined(ONLINE)
-u32 rand_32(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
-u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
-f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
-u64 rand_64(void) { static u64 msws_state1 = 0; static u64 msws_state2 = 0; static u64 msws_state3 = 0xb5ad4eceda1ce2a9ul; static u64 msws_state4 = 0; static u64 msws_state5 = 0; static u64 msws_state6 = 0x278c5a4d8419fe6bul; u64 ret; msws_state1 *= msws_state1; ret = msws_state1 += (msws_state2 += msws_state3); msws_state1 = (msws_state1 >> 32) | (msws_state1 << 32); msws_state4 *= msws_state4; msws_state4 += (msws_state5 += msws_state6); msws_state4 = (msws_state4 >> 32) | (msws_state4 << 32); return ret ^ msws_state4; }
-u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
-f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
-#else
-u32 rand_32(void) { static u64 pcg_state = 0x853c49e6748fea9bull; u64 t = pcg_state; pcg_state = t * 0x5851f42d4c957f2dull + 0xda3e39cb94b95bdbull; u32 sh = ((t >> 18u) ^ t) >> 27u; u32 ro = t >> 59u; return (sh >> ro) | (sh << ((-ro) & 31)); }
-u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
-f32 randf_32(void) { u32 a = 0x3F800000u | (rand_32() >> 9); return (*((f32 *)(&a))) - 1; }
-u64 rand_64(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr128ss_state2 = 0x2ull; const u64 s0 = xrsr128ss_state1; u64 s1 = xrsr128ss_state2; const u64 ret = rotl64(s0 * 5, 7) * 9; s1 ^= s0; xrsr128ss_state1 = rotl64(s0, 24) ^ s1 ^ (s1 << 16); xrsr128ss_state2 = rotl64(s1, 37); return ret; }
-u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
-f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
-#endif
-
-// clang-format on
-#endif                // RNGs
 
 #if defined(USE_COMBSORT) // COMBSORT
 #define COMBSORT11(bit)                                                                         \
