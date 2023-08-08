@@ -710,6 +710,23 @@ u32 spow_u32(u32 x, u32 y) { SPOW(32); }
 u64 spow_u64(u64 x, u64 y) { SPOW(64); }
 #undef SPOW
 
+#define POWMOD(bit, wbit)                                                                       \
+    u##bit res = 1;                                                                             \
+    while (k) {                                                                                 \
+        if (k & 1)                                                                              \
+            res = ((u##wbit)a * res) % mod;                                                     \
+        a = ((u##wbit)a * a) % mod;                                                             \
+        k >>= 1;                                                                                \
+    }                                                                                           \
+    return res;
+u32 powmod_u32(u32 a, u64 k, u32 mod) {
+    POWMOD(32, 64);
+}
+u64 powmod_u64(u64 a, u64 k, u64 mod) {
+    POWMOD(64, 128);
+}
+#undef POWMOD
+
 u64 isqrt(u64 n) {
     u64 root;
     if (n >= (u64)(18446744065119617025ull))
