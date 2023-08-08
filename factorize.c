@@ -337,6 +337,30 @@ Factor *factors(u64 n) {
     return ret;
 }
 
+u64 primitive_root_prime(u64 p) {
+    if (p == 2)
+        return 1;
+    Factor *pf = factors(p - 1);
+    set_m64(p);
+    u64 ret = 2ul;
+    u64 count = 0ul;
+    while (true) {
+        for (u64 i = 0; i < pf[16].b; ++i) {
+            if (r1_m64 != pow_m64(ret, (p - 1) / pf[i].a))
+                count++;
+            else {
+                count = 0;
+                break;
+            }
+        }
+        if (count == pf[16].b)
+            break;
+        ret = randrange_64(3, p - 1);
+    }
+    free(pf);
+    return from_m64(ret);
+}
+
 void solve_factorize(void) {
     int Q;
     rd_int(&Q);
