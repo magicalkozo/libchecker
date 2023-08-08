@@ -469,5 +469,4 @@ void solve_conv_bitwise_or(void) {
     }
     wt_char('\n');
     free(C);
-    return 0;
 }
