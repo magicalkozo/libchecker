@@ -324,14 +324,14 @@ void supset_mobius_transform(int A_len, u32 *A) {
 }
 u32 *conv_bitwise_and(int A_len, int B_len, u32 *A, u32 *B) {
     assert(A_len == B_len);
-    supset_zeta(A_len, A);
-    supset_zeta(B_len, B);
+    supset_zeta_transform(A_len, A);
+    supset_zeta_transform(B_len, B);
     u32 *ret = (u32 *)calloc(A_len, sizeof(u32));
     if (ret == NULL)
         exit(EXIT_FAILURE);
     for (int i = 0; i < A_len; i++)
         ret[i] = mul_m32(A[i], B[i]);
-    supset_mobius(A_len, ret);
+    supset_mobius_transform(A_len, ret);
     return ret;
 }
 
