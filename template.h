@@ -481,12 +481,8 @@ u64 gcd64(u64 a, u64 b) {
             n *= n;                                                                             \
     }                                                                                           \
     return p;
-u32 ipow_u32(u32 n, u64 k) {
-    IPOW(32);
-}
-u32 ipow_u64(u32 n, u64 k) {
-    IPOW(64);
-}
+u32 ipow_u32(u32 n, u64 k) { IPOW(32); }
+u32 ipow_u64(u32 n, u64 k) { IPOW(64); }
 #undef IPOW
 #define SPOW(bit)                                                                               \
     if (k == 0)                                                                                 \
@@ -499,12 +495,8 @@ u32 ipow_u64(u32 n, u64 k) {
         k >>= 1;                                                                                \
     }                                                                                           \
     return res;
-u32 spow_u32(u32 n, u32 k) {
-    SPOW(32);
-}
-u64 spow_u64(u64 n, u64 k) {
-    SPOW(64);
-}
+u32 spow_u32(u32 n, u32 k) { SPOW(32); }
+u64 spow_u64(u64 n, u64 k) { SPOW(64); }
 #undef SPOW
 #define POWMOD(word, dword)                                                                     \
     u##word res = 1;                                                                            \
@@ -515,12 +507,8 @@ u64 spow_u64(u64 n, u64 k) {
         k >>= 1;                                                                                \
     }                                                                                           \
     return res;
-u32 powmod_u32(u32 n, u64 k, u32 mod) {
-    POWMOD(32, 64);
-}
-u64 powmod_u64(u64 n, u64 k, u64 mod) {
-    POWMOD(64, 128);
-}
+u32 powmod_u32(u32 n, u64 k, u32 mod) { POWMOD(32, 64); }
+u64 powmod_u64(u64 n, u64 k, u64 mod) { POWMOD(64, 128); }
 #undef POWMOD
 u64 isqrt(u64 n) {
     u64 root;
@@ -612,6 +600,30 @@ bool is_perfect_seventh(u64 n) {
 #endif
 
 #if defined(USE_COMBSORT11)
+bool max_sort_i32(i32 x, i32 y) { return x < y; }
+bool max_sort_i64(i64 x, i64 y) { return x < y; }
+bool max_sort_u32(u32 x, u32 y) { return x < y; }
+bool max_sort_u64(u64 x, u64 y) { return x < y; }
+bool max_sort_fst_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.a < y.a; }
+bool max_sort_fst_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.a < y.a; }
+bool max_sort_fst_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.a < y.a; }
+bool max_sort_fst_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.a < y.a; }
+bool max_sort_snd_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.b < y.b; }
+bool max_sort_snd_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.b < y.b; }
+bool max_sort_snd_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.b < y.b; }
+bool max_sort_snd_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.b < y.b; }
+bool min_sort_i32(i32 x, i32 y) { return x > y; }
+bool min_sort_i64(i64 x, i64 y) { return x > y; }
+bool min_sort_u32(u32 x, u32 y) { return x > y; }
+bool min_sort_u64(u64 x, u64 y) { return x > y; }
+bool min_sort_fst_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.a > y.a; }
+bool min_sort_fst_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.a > y.a; }
+bool min_sort_fst_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.a > y.a; }
+bool min_sort_fst_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.a > y.a; }
+bool min_sort_snd_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.b > y.b; }
+bool min_sort_snd_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.b > y.b; }
+bool min_sort_snd_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.b > y.b; }
+bool min_sort_snd_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.b > y.b; }
 #define COMBSORT11(type)                                                                        \
     int g = a_len;                                                                              \
     type t;                                                                                     \
@@ -630,30 +642,22 @@ bool is_perfect_seventh(u64 n) {
             break;                                                                              \
     }
 
-void combsort11_i32(bool(*func)(i32, i32), int a_len, i32* a) {
-    COMBSORT11(i32);
-}
-void combsort11_i64(bool(*func)(i64, i64), int a_len, i64* a) {
-    COMBSORT11(i64);
-}
-void combsort11_u32(bool(*func)(u32, u32), int a_len, u32* a) {
-    COMBSORT11(u32);
-}
-void combsort11_u64(bool(*func)(u64, u64), int a_len, u64* a) {
-    COMBSORT11(u64);
-}
-void combsort11_Pair_i32(bool(*func)(Pair_i32, Pair_i32), int a_len, Pair_i32* a) {
-    COMBSORT11(Pair_i32);
-}
-void combsort11_Pair_i64(bool(*func)(Pair_i64, Pair_i64), int a_len, Pair_i64* a) {
-    COMBSORT11(Pair_i64);
-}
-void combsort11_Pair_u32(bool(*func)(Pair_u32, Pair_u32), int a_len, Pair_u32* a) {
-    COMBSORT11(Pair_u32);
-}
-void combsort11_Pair_u64(bool(*func)(Pair_u64, Pair_u64), int a_len, Pair_u64* a) {
-    COMBSORT11(Pair_u64);
-}
+void combsort11_i32(bool(*func)(i32, i32), int a_len, i32* a) { COMBSORT11(i32); }
+void combsort11_i64(bool(*func)(i64, i64), int a_len, i64* a) { COMBSORT11(i64); }
+void combsort11_u32(bool(*func)(u32, u32), int a_len, u32* a) { COMBSORT11(u32); }
+void combsort11_u64(bool(*func)(u64, u64), int a_len, u64* a) { COMBSORT11(u64); }
+void combsort11_Pair_i32(bool(*func)(Pair_i32, Pair_i32), int a_len, Pair_i32* a) { COMBSORT11(Pair_i32); }
+void combsort11_Pair_i64(bool(*func)(Pair_i64, Pair_i64), int a_len, Pair_i64* a) { COMBSORT11(Pair_i64); }
+void combsort11_Pair_u32(bool(*func)(Pair_u32, Pair_u32), int a_len, Pair_u32* a) { COMBSORT11(Pair_u32); }
+void combsort11_Pair_u64(bool(*func)(Pair_u64, Pair_u64), int a_len, Pair_u64* a) { COMBSORT11(Pair_u64); }
+void combsort11_Triple_i32(bool(*func)(Triple_i32, Triple_i32), int a_len, Triple_i32* a) { COMBSORT11(Triple_i32); }
+void combsort11_Triple_i64(bool(*func)(Triple_i64, Triple_i64), int a_len, Triple_i64* a) { COMBSORT11(Triple_i64); }
+void combsort11_Triple_u32(bool(*func)(Triple_u32, Triple_u32), int a_len, Triple_u32* a) { COMBSORT11(Triple_u32); }
+void combsort11_Triple_u64(bool(*func)(Triple_u64, Triple_u64), int a_len, Triple_u64* a) { COMBSORT11(Triple_u64); }
+void combsort11_Quadruple_i32(bool(*func)(Quadruple_i32, Quadruple_i32), int a_len, Quadruple_i32* a) { COMBSORT11(Quadruple_i32); }
+void combsort11_Quadruple_i64(bool(*func)(Quadruple_i64, Quadruple_i64), int a_len, Quadruple_i64* a) { COMBSORT11(Quadruple_i64); }
+void combsort11_Quadruple_u32(bool(*func)(Quadruple_u32, Quadruple_u32), int a_len, Quadruple_u32* a) { COMBSORT11(Quadruple_u32); }
+void combsort11_Quadruple_u64(bool(*func)(Quadruple_u64, Quadruple_u64), int a_len, Quadruple_u64* a) { COMBSORT11(Quadruple_u64); }
 #undef COMBSORT11
 #endif
 
