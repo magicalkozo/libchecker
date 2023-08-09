@@ -572,8 +572,8 @@ static inline void br32(u64 a) { u64 x = (u64)(((u128)(a)*im_b32) >> 64); u64 y 
 u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u32)m_b32 : 0); return a; }
 u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
 u32 min_b32(u32 a) { return sub_b32(0, a); }
-u32 relaxed_add_b32(u32 a, u32 b) { a += b - n2_m32; a += n2_m32 & -(a >> 31u); return a; }
-u32 relaxed_sub_b32(u32 a, u32 b) { a -= b; a += n2_m32 & -(a >> 31u); return a; }
+u32 relaxed_add_b32(u32 a, u32 b) { a += b - m2_b32; a += m2_b32 & -(a >> 31u); return a; }
+u32 relaxed_sub_b32(u32 a, u32 b) { a -= b; a += m2_b32 & -(a >> 31u); return a; }
 u32 relaxed_min_b32(u32 a) { return relaxed_sub_m32(0, a); }
 u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
 u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
