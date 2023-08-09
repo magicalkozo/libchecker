@@ -574,7 +574,7 @@ u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
 u32 min_b32(u32 a) { return sub_b32(0, a); }
 u32 relaxed_add_b32(u32 a, u32 b) { a += b - m2_b32; a += m2_b32 & -(a >> 31u); return a; }
 u32 relaxed_sub_b32(u32 a, u32 b) { a -= b; a += m2_b32 & -(a >> 31u); return a; }
-u32 relaxed_min_b32(u32 a) { return relaxed_sub_m32(0, a); }
+u32 relaxed_min_b32(u32 a) { return relaxed_sub_b32(0, a); }
 u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
 u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
 u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
