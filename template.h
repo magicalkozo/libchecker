@@ -611,95 +611,6 @@ bool is_perfect_seventh(u64 n) {
 }
 #endif
 
-#if defined(USE_QUADRATIC_RESIDUE)
-bool euler_criterion_32(u32 a, u32 mod) {
-#if defined(USE_M32)
-    return pow_m32(to_m32(a), (mod - 1) >> 1) == r1_m32;
-#elif defined(USE_B32)
-    return pow_b32(a, (mod - 1) >> 1) == 1;
-#else
-    u32 ret = 1, b = a, k = (mod - 1) >> 1;
-    while (k) {
-        if (k & 1)
-            ret = (u64)b * ret % mod;
-        b = (u64)b * b % mod;
-        k >>= 1;
-    }
-    return ret == 1;
-#endif
-}
-bool euler_criterion_64(u64 a, u64 mod) {
-#if defined(USE_M64)
-    return pow_m64(to_m64(a), (mod - 1) >> 1) == r1_m64;
-#elif defined(USE_B64)
-    return pow_b64(a, (mod - 1) >> 1) == 1;
-#else
-    u64 ret = 1, b = a, k = (mod - 1) >> 1;
-    while (k) {
-        if (k & 1)
-            ret = (u128)b * ret % mod;
-        b = (u128)b * b % mod;
-        k >>= 1;
-    }
-    return ret == 1;
-#endif
-}
-int legendre_symbol_32(u32 a, u32 mod)  {
-    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
-    int ret;
-#if defined(USE_M32)
-    if (mr32((u64)a) == 0)
-        ret = 0;
-#else
-    if (a == 0)
-        ret = 0;
-#endif
-    else if (euler_criterion_32(a, mod))
-        ret = 1;
-    else
-        ret = -1;
-    return ret;
-}
-int legendre_symbol_64(u64 a, u64 mod) {
-    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
-    int ret;
-#if defined(USE_M64)
-    if (mr64((u128)a) == 0)
-        ret = 0;
-#else
-    if (a == 0)
-        ret = 0;
-#endif
-    else if (euler_criterion_64(a, mod))
-        ret = 1;
-    else
-        ret = -1;
-    return ret;
-}
-int jacobi_symbol(long long a, long long n) {
-    int j = 1;
-    long long t;
-    while (a) {
-        if (a < 0) {
-            a = -a;
-            if ((n & 3) == 3)
-                j = -j;
-        }
-        int s = ctz64(a);
-        a >>= s;
-        if ((((n & 7) == 3) || ((n & 7) == 5)) && (s & 1))
-            j = -j;
-        if ((a & n & 3) == 3)
-            j = -j;
-        t = a, a = n, n = t;
-        a %= n;
-        if ((a << 1) > n)
-            a -= n;
-    }
-    return n == 1 ? j : 0;
-}
-#endif
-
 #if defined(USE_COMBSORT11)
 #define COMBSORT11(type)                                                                        \
     int g = a_len;                                                                              \
@@ -926,4 +837,93 @@ u64 shr_dm64(u64 a, u64 n) { return (a & 1) ? ((a >> 1) + (n >> 1) + 1) : (a >> 
 u64 pow_dm64(u64 a, u64 k, u64 r1, u64 ni, u64 n) { u64 ret = r1; while (k > 0) { if (k & 1) ret = mul_dm64(ret, a, ni, n); a = squ_dm64(a, ni, n); k >>= 1; } return ret; }
 u64 inv_dm64(u64 a, u64 r3, u64 ni, u64 n) { return dmr64((u128)r3 * modinv64(a, n), ni, n); }
 u64 div_dm64(u64 a, u64 b, u64 r3, u64 ni, u64 n) { return mul_dm64(a, inv_dm64(b, r3, ni, n), ni, n); }
+#endif
+
+#if defined(USE_QUADRATIC_RESIDUE)
+bool euler_criterion_32(u32 a, u32 mod) {
+#if defined(USE_M32)
+    return pow_m32(to_m32(a), (mod - 1) >> 1) == r1_m32;
+#elif defined(USE_B32)
+    return pow_b32(a, (mod - 1) >> 1) == 1;
+#else
+    u32 ret = 1, b = a, k = (mod - 1) >> 1;
+    while (k) {
+        if (k & 1)
+            ret = (u64)b * ret % mod;
+        b = (u64)b * b % mod;
+        k >>= 1;
+    }
+    return ret == 1;
+#endif
+}
+bool euler_criterion_64(u64 a, u64 mod) {
+#if defined(USE_M64)
+    return pow_m64(to_m64(a), (mod - 1) >> 1) == r1_m64;
+#elif defined(USE_B64)
+    return pow_b64(a, (mod - 1) >> 1) == 1;
+#else
+    u64 ret = 1, b = a, k = (mod - 1) >> 1;
+    while (k) {
+        if (k & 1)
+            ret = (u128)b * ret % mod;
+        b = (u128)b * b % mod;
+        k >>= 1;
+    }
+    return ret == 1;
+#endif
+}
+int legendre_symbol_32(u32 a, u32 mod)  {
+    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
+    int ret;
+#if defined(USE_M32)
+    if (mr32((u64)a) == 0)
+        ret = 0;
+#else
+    if (a == 0)
+        ret = 0;
+#endif
+    else if (euler_criterion_32(a, mod))
+        ret = 1;
+    else
+        ret = -1;
+    return ret;
+}
+int legendre_symbol_64(u64 a, u64 mod) {
+    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
+    int ret;
+#if defined(USE_M64)
+    if (mr64((u128)a) == 0)
+        ret = 0;
+#else
+    if (a == 0)
+        ret = 0;
+#endif
+    else if (euler_criterion_64(a, mod))
+        ret = 1;
+    else
+        ret = -1;
+    return ret;
+}
+int jacobi_symbol(long long a, long long n) {
+    int j = 1;
+    long long t;
+    while (a) {
+        if (a < 0) {
+            a = -a;
+            if ((n & 3) == 3)
+                j = -j;
+        }
+        int s = ctz64(a);
+        a >>= s;
+        if ((((n & 7) == 3) || ((n & 7) == 5)) && (s & 1))
+            j = -j;
+        if ((a & n & 3) == 3)
+            j = -j;
+        t = a, a = n, n = t;
+        a %= n;
+        if ((a << 1) > n)
+            a -= n;
+    }
+    return n == 1 ? j : 0;
+}
 #endif
