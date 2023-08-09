@@ -484,7 +484,7 @@ u64 gcd64(u64 a, u64 b) {
 u32 ipow_u32(u32 n, u64 k) {
     IPOW(32);
 }
-u32 ipow_u32(u32 n, u64 k) {
+u32 ipow_u64(u32 n, u64 k) {
     IPOW(64);
 }
 #undef IPOW
