@@ -1,15 +1,16 @@
 // #define ONLINE
 #define OFFLINE
+#define USE_RNGs
 #define USE_GCD
-#define USE_DM32
-#define USE_DM64
+#define USE_POW_ROOT
+#define USE_QUADRATIC_RESIDUE
+#define USE_COMBSORT11
 #define USE_M32
 #define USE_M64
 #define USE_B32
 #define USE_B64
-#define USE_COMBSORT
-#define USE_QUADRATIC_RESIDUE
-#define USE_POW_ROOT
+#define USE_DM32
+#define USE_DM64
 
 #if defined(ONLINE)
 #pragma GCC optimize("O3")
@@ -88,9 +89,98 @@ typedef struct { u64 a, b, c, d; } Quadruple_u64;
 #define rotr64(x, r)     ((r) < (0) ? (((x) << (((u64)(-(r)) % (64)))) | ((x) >> ((-((((u64)(-(r)) % (64))))) & 63))) : (((x) >> ((r) % (64))) | ((x) << ((-(r)) & 63))))
 #define rotl64(x, r)     (rotr64((x), (-(r))))
 
-#if defined(ONLINE)
+#if defined(OFFLINE)
+#if defined(_WIN32)
 
-#pragma region input
+#define GetChar _getchar_nolock
+#define PutChar _putchar_nolock
+
+#else
+
+#define _GNU_SOURCE
+#define GetChar getchar_unlocked
+#define PutChar putchar_unlocked
+
+#endif
+
+#define INPUT_UINT(bit)                                                                         \
+    u##bit c, x = 0;                                                                            \
+    while (c = GetChar(), c < '0' || c > '9') {                                                 \
+    }                                                                                           \
+    while ('/' < c && c < ':') {                                                                \
+        x = x * 10 + c - '0';                                                                   \
+        c = GetChar();                                                                          \
+    }                                                                                           \
+    return x
+
+u32 in_u32(void) { INPUT_UINT(32); }
+u64 in_u64(void) { INPUT_UINT(64); }
+u128 in_u128(void) { INPUT_UINT(128); }
+
+#undef INPUT_UINT
+
+#define INPUT_SINT(bit)                                                                         \
+    i##bit c, x = 0, f = 1;                                                                     \
+    while (c = GetChar(), c < '0' || c > '9') {                                                 \
+        if (c == '-') {                                                                         \
+            f = -f;                                                                             \
+        }                                                                                       \
+    }                                                                                           \
+    while ('/' < c && c < ':') {                                                                \
+        x = x * 10 + c - '0';                                                                   \
+        c = GetChar();                                                                          \
+    }                                                                                           \
+    return f * x
+
+i32 in_i32(void) { INPUT_SINT(32); }
+i64 in_i64(void) { INPUT_SINT(64); }
+i128 in_i128(void) { INPUT_SINT(128); }
+
+#undef INPUT_SINT
+
+#define OUTPUT_UINT(bit)                                                                        \
+    if (x >= 10) {                                                                              \
+        out_u##bit(x / 10);                                                                     \
+    }                                                                                           \
+    PutChar(x - x / 10 * 10 + '0')
+
+void out_u32(u32 x) { OUTPUT_UINT(32); }
+void out_u64(u64 x) { OUTPUT_UINT(64); }
+void out_u128(u128 x) { OUTPUT_UINT(128); }
+
+#undef OUTPUT_UINT
+
+#define OUTPUT_SINT(bit)                                                                        \
+    if (x < 0) {                                                                                \
+        PutChar('-');                                                                           \
+        x = -x;                                                                                 \
+    }                                                                                           \
+    out_u##bit((u##bit)x)
+
+void out_i32(i32 x) { OUTPUT_SINT(32); }
+void out_i64(i64 x) { OUTPUT_SINT(64); }
+void out_i128(i128 x) { OUTPUT_SINT(128); }
+
+#undef OUTPUT_SINT
+
+void newline(void) { PutChar('\n'); }
+void space(void) { PutChar(' '); }
+
+#define OUTPUT_BINARY(bit)                                                                      \
+    u##bit mask = (u##bit)1 << (sizeof(v) * CHAR_BIT - 1);                                      \
+    do {                                                                                        \
+        PutChar(mask &v ? '1' : '0');                                                           \
+    } while (mask >>= 1)
+
+void printb_32bit(u32 v) { OUTPUT_BINARY(32); }
+void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
+
+#undef OUTPUT_BINARY
+#undef PutChar
+#undef GetChar
+#endif
+
+#if defined(ONLINE)
 
 static char *input;
 static size_t input_size, input_string_size;
@@ -105,6 +195,7 @@ __attribute__((constructor)) void _construct_read_(void) {
         __builtin_trap();
     madvise(input, input_size, MADV_SEQUENTIAL);
 }
+
 
 #define READ_SKIP                                                                               \
     char c = *input;                                                                            \
@@ -140,19 +231,18 @@ void rd_u32(u32 *x) { READ_UNSIGNED }
 void rd_u64(u64 *x) { READ_UNSIGNED }
 void rd_u128(u128 *x) { READ_UNSIGNED }
 
+
 #undef READ_SIGNED
 #undef READ_UNSIGNED
 #undef READ_CHAR_TO_INTEGER
 #undef READ_SKIP
+
 
 __attribute__((destructor)) void _destruct_read_(void) {
     munmap(input, input_size);
     input_size = input_string_size = 0;
 }
 
-#pragma endregion input
-
-#pragma region output
 
 #define O_BUF_SIZE 1048576
 #define O_BLOCK_SIZE 10000
@@ -177,6 +267,7 @@ __attribute__((constructor)) void _construct_write_(void) {
         power10[i] = power10[i - 1] * 10;
 }
 
+
 #define DIGIT_BLOCK1                                                                            \
     if (n >= power10[9]) return 10;                                                             \
     if (n >= power10[8]) return 9;                                                              \
@@ -188,6 +279,7 @@ __attribute__((constructor)) void _construct_write_(void) {
     if (n >= power10[2]) return 3;                                                              \
     if (n >= power10[1]) return 2;                                                              \
     return 1;
+
 #define DIGIT_BLOCK2                                                                            \
     if (n >= power10[19]) return 20;                                                            \
     if (n >= power10[18]) return 19;                                                            \
@@ -199,6 +291,7 @@ __attribute__((constructor)) void _construct_write_(void) {
     if (n >= power10[12]) return 13;                                                            \
     if (n >= power10[11]) return 12;                                                            \
     return 11;
+
 #define DIGIT_BLOCK3                                                                            \
     if (n >= power10[29]) return 30;                                                            \
     if (n >= power10[28]) return 29;                                                            \
@@ -210,6 +303,7 @@ __attribute__((constructor)) void _construct_write_(void) {
     if (n >= power10[22]) return 23;                                                            \
     if (n >= power10[21]) return 22;                                                            \
     return 21;
+
 #define DIGIT_BLOCK4                                                                            \
     if (n >= power10[38]) return 39;                                                            \
     if (n >= power10[37]) return 38;                                                            \
@@ -260,6 +354,7 @@ void flush() {
 size_t get_integer_size_32(u32 n) {
     DIGIT_BLOCK1
 }
+
 size_t get_integer_size_64(u64 n) {
     if (n >= power10[10]) {
         DIGIT_BLOCK2
@@ -267,6 +362,7 @@ size_t get_integer_size_64(u64 n) {
         DIGIT_BLOCK1
     }
 }
+
 size_t get_integer_size_128(u128 n) {
     if (n >= power10[30]) {
         DIGIT_BLOCK4
@@ -283,20 +379,24 @@ void wt_sp(void) {
     output[output_size++] = ' ';
     OUTPUT_BUFFER_EQ_CHECK
 }
+
 void wt_nl(void) {
     output[output_size++] = '\n';
     OUTPUT_BUFFER_EQ_CHECK
 }
+
 void wt_char(char c) {
     output[output_size++] = c;
     OUTPUT_BUFFER_EQ_CHECK
 }
+
 void wt_str(const char* s) {
     while (*s != 0) {
         output[output_size++] = *s++;
         OUTPUT_BUFFER_EQ_CHECK
     }
 }
+
 void wt_uint(unsigned x) { WRITE_UNSIGNED(32) }
 void wt_ull(unsigned long long x) { WRITE_UNSIGNED(64) }
 void wt_u32(u32 x) { WRITE_UNSIGNED(32) }
@@ -321,85 +421,15 @@ void wt_i128(i128 x) { WRITE_SIGNED(128) }
 #undef O_BLOCK_SIZE
 #undef O_INT_SIZE
 
+
 __attribute__((destructor)) void _destruct_write_(void) {
     flush();
     output_size = 0;
 }
 
-#pragma endregion output
-
 #endif
 
-#if defined(OFFLINE)
-#if defined(_WIN32)
-#define GetChar _getchar_nolock
-#define PutChar _putchar_nolock
-#else
-#define GetChar getchar_unlocked
-#define PutChar putchar_unlocked
-#endif
-#define INPUT_UINT(bit)                                                                         \
-    u##bit c, x = 0;                                                                            \
-    while (c = GetChar(), c < '0' || c > '9') {                                                 \
-    }                                                                                           \
-    while ('/' < c && c < ':') {                                                                \
-        x = x * 10 + c - '0';                                                                   \
-        c = GetChar();                                                                          \
-    }                                                                                           \
-    return x
-u32 in_u32(void) { INPUT_UINT(32); }
-u64 in_u64(void) { INPUT_UINT(64); }
-u128 in_u128(void) { INPUT_UINT(128); }
-#undef INPUT_UINT
-#define INPUT_SINT(bit)                                                                         \
-    i##bit c, x = 0, f = 1;                                                                     \
-    while (c = GetChar(), c < '0' || c > '9') {                                                 \
-        if (c == '-') {                                                                         \
-            f = -f;                                                                             \
-        }                                                                                       \
-    }                                                                                           \
-    while ('/' < c && c < ':') {                                                                \
-        x = x * 10 + c - '0';                                                                   \
-        c = GetChar();                                                                          \
-    }                                                                                           \
-    return f * x
-i32 in_i32(void) { INPUT_SINT(32); }
-i64 in_i64(void) { INPUT_SINT(64); }
-i128 in_i128(void) { INPUT_SINT(128); }
-#undef INPUT_SINT
-#define OUTPUT_UINT(bit)                                                                        \
-    if (x >= 10) {                                                                              \
-        out_u##bit(x / 10);                                                                     \
-    }                                                                                           \
-    PutChar(x - x / 10 * 10 + '0')
-void out_u32(u32 x) { OUTPUT_UINT(32); }
-void out_u64(u64 x) { OUTPUT_UINT(64); }
-void out_u128(u128 x) { OUTPUT_UINT(128); }
-#undef OUTPUT_UINT
-#define OUTPUT_SINT(bit)                                                                        \
-    if (x < 0) {                                                                                \
-        PutChar('-');                                                                           \
-        x = -x;                                                                                 \
-    }                                                                                           \
-    out_u##bit((u##bit)x)
-void out_i32(i32 x) { OUTPUT_SINT(32); }
-void out_i64(i64 x) { OUTPUT_SINT(64); }
-void out_i128(i128 x) { OUTPUT_SINT(128); }
-#undef OUTPUT_SINT
-void newline(void) { PutChar('\n'); }
-void space(void) { PutChar(' '); }
-#define OUTPUT_BINARY(bit)                                                                      \
-    u##bit mask = (u##bit)1 << (sizeof(v) * CHAR_BIT - 1);                                      \
-    do {                                                                                        \
-        PutChar(mask &v ? '1' : '0');                                                           \
-    } while (mask >>= 1)
-void printb_32bit(u32 v) { OUTPUT_BINARY(32); }
-void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
-#undef OUTPUT_BINARY
-#undef PutChar
-#undef GetChar
-#endif
-
+#if defined(USE_RNGs)
 #if defined(ONLINE)
 u32 rand_32(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
 u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
@@ -415,271 +445,32 @@ u64 rand_64(void) { static u64 xrsr128ss_state1 = 0x1ull; static u64 xrsr128ss_s
 u64 randrange_64(u64 l, u64 r) { return l + rand_64() % (r - l + 1); }
 f64 randf_64(void) { u64 a = 0x3FF0000000000000ull | (rand_64() >> 12); return (*((f64 *)(&a))) - 1; }
 #endif
+#endif
 
-#if defined(USE_GCD)  // GCD
-#define BINARY_GCD(bit)                                                                         \
+#if defined(USE_GCD)
+#define BGCD(bit)                                                                               \
     if (!a || !b)                                                                               \
         return a | b;                                                                           \
     u##bit t, s = ctz##bit(a | b);                                                              \
     a >>= ctz##bit(a);                                                                          \
-    do                                                                                          \
-    {                                                                                           \
+    do {                                                                                        \
         b >>= ctz##bit(b);                                                                      \
         if (a > b)                                                                              \
             t = a, a = b, b = t;                                                                \
         b -= a;                                                                                 \
     } while (b);                                                                                \
-    return a << s
-u32 gcd32(u32 a, u32 b) { BINARY_GCD(32); }
-u64 gcd64(u64 a, u64 b) { BINARY_GCD(64); }
-#undef BINARY_GCD
-#endif                // GCD
+    return a << s;
 
-#if defined(USE_DM32) || defined(USE_DM64) || defined(USE_M32) || defined(USE_M64) || defined(USE_B32) || defined(USE_B64)
-typedef struct { i32 a, b; u32 d; } Bezout32;
-typedef struct { i64 a, b; u64 d; } Bezout64;
-#define BEZOUT(bit)                                                                             \
-    u##bit t;                                                                                   \
-    bool swap = x < y;                                                                          \
-    if (swap) t = x, x = y, y = t;                                                              \
-    if (y == 0)                                                                                 \
-    {                                                                                           \
-        if (x == 0)                                                                             \
-            return (Bezout##bit) {0, 0, 0};                                                     \
-        else if (swap)                                                                          \
-            return (Bezout##bit) {0, 1, x};                                                     \
-        else                                                                                    \
-            return (Bezout##bit) {1, 0, x};                                                     \
-    }                                                                                           \
-    i##bit s0 = 1, s1 = 0, t0 = 0, t1 = 1;                                                      \
-    while (true)                                                                                \
-    {                                                                                           \
-        u##bit q = x / y, r = x % y;                                                            \
-        if (r == 0)                                                                             \
-        {                                                                                       \
-            if (swap)                                                                           \
-                return (Bezout##bit) {t1, s1, y};                                               \
-            else                                                                                \
-                return (Bezout##bit) {s1, t1, y};                                               \
-        }                                                                                       \
-        i##bit s2 = s0 - (i##bit)(q) * s1, t2 = t0 - (i##bit)(q) * t1;                          \
-        x = y, y = r;                                                                           \
-        s0 = s1, s1 = s2, t0 = t1, t1 = t2;                                                     \
-    }
-Bezout32 bezout32(u32 x, u32 y) { BEZOUT(32); }
-Bezout64 bezout64(u64 x, u64 y) { BEZOUT(64); }
-u32 modinv32(u32 x, u32 mod) { Bezout32 abd = bezout32(x, mod); return abd.a < 0 ? mod + abd.a : (u32)abd.a; }
-u64 modinv64(u64 x, u64 mod) { Bezout64 abd = bezout64(x, mod); return abd.a < 0 ? mod + abd.a : (u64)abd.a; }
-#undef BEZOUT
-#endif 
-
-#if defined(USE_DM32) // DM32
-u32 r1_dm32(u32 mod) { return (u32)(i32)-1 % mod + 1; }
-u32 r2_dm32(u32 mod) { return (u64)(i64)-1 % mod + 1; }
-u32 r3_dm32(u32 mod, u32 r1, u32 r2) { return (u32)(((u64)r1 * (u64)r2) % mod); }
-u32 n_dm32(u32 mod) { return mod; }
-u32 ni_dm32(u32 mod) { u32 ni = mod; for (int _ = 0; _ < 4; ++_) ni *= 2 - ni * mod; return ni; }
-u32 n2_dm32(u32 mod) { return mod << 1; }
-u32 dmr32(u64 a, u32 ni, u32 n) { u32 y = (u32)(a >> 32) - (u32)(((u64)((u32)a * ni) * n) >> 32); return (i32)y < 0 ? y + n : y; }
-u32 to_dm32(u32 a, u32 r2, u32 ni, u32 n) { return dmr32((u64)a * r2, ni, n); }
-u32 from_dm32(u32 a, u32 ni, u32 n) { return dmr32((u64)a, ni, n); }
-u32 add_dm32(u32 a, u32 b, u32 n) { a += b; a -= (a >= n ? n : 0); return a; }
-u32 sub_dm32(u32 a, u32 b, u32 n) { a += (a < b ? n : 0); a -= b; return a; }
-u32 min_dm32(u32 a, u32 n) { return sub_dm32(0, a, n); }
-u32 relaxed_add_dm32(u32 a, u32 b, u32 n2) { a += b - n2; a += n2 & -(a >> 31u); return a; }
-u32 relaxed_sub_dm32(u32 a, u32 b, u32 n2) { a -= b; a += n2 & -(a >> 31u); return a; }
-u32 relaxed_min_dm32(u32 a, u32 n2) { return relaxed_sub_dm32(0, a, n2); }
-u32 mul_dm32(u32 a, u32 b, u32 ni, u32 n) { return dmr32((u64)a * b, ni, n); }
-u32 squ_dm32(u32 a, u32 ni, u32 n) { return dmr32((u64)a * a, ni, n); }
-u32 shl_dm32(u32 a, u32 n) { return (a <<= 1) >= n ? a - n : a; }
-u32 shr_dm32(u32 a, u32 n) { return (a & 1) ? ((a >> 1) + (n >> 1) + 1) : (a >> 1); }
-u32 pow_dm32(u32 a, u64 k, u32 r1, u32 ni, u32 n) { u32 ret = r1; while (k > 0) { if (k & 1) ret = mul_dm32(ret, a, ni, n); a = squ_dm32(a, ni, n); k >>= 1; } return ret; }
-u32 inv_dm32(u32 a, u32 r3, u32 ni, u32 n) { return dmr32((u64)r3 * modinv32(a, n), ni, n); }
-u32 div_dm32(u32 a, u32 b, u32 r3, u32 ni, u32 n) { return mul_dm32(a, inv_dm32(b, r3, ni, n), ni, n); }
-#endif                // DM32
-
-#if defined(USE_DM64) // DM64
-u64 r1_dm64(u64 mod) { return (u64)(i64)-1 % mod + 1; }
-u64 r2_dm64(u64 mod) { return (u128)(i128)-1 % mod + 1; }
-u64 r3_dm64(u64 mod, u64 r1, u64 r2) { return (u64)(((u128)r1 * (u128)r2) % mod); }
-u64 n_dm64(u64 mod) { return mod; }
-u64 ni_dm64(u64 mod) { u64 ni = mod; for (int _ = 0; _ < 5; ++_) ni *= 2 - ni * mod; return ni; }
-u64 n2_dm64(u64 mod) { return mod << 1; }
-u64 dmr64(u128 a, u64 ni, u64 n) { u64 y = (u64)(a >> 64) - (u64)(((u128)((u64)a * ni) * n) >> 64); return (i64)y < 0 ? y + n : y; }
-u64 to_dm64(u64 a, u64 r2, u64 ni, u64 n) { return dmr64((u128)a * r2, ni, n); }
-u64 from_dm64(u64 a, u64 ni, u64 n) { return dmr64((u128)a, ni, n); }
-u64 add_dm64(u64 a, u64 b, u64 n) { a += b; a -= (a >= n ? n : 0); return a; }
-u64 sub_dm64(u64 a, u64 b, u64 n) { a += (a < b ? n : 0); a -= b; return a; }
-u64 min_dm64(u64 a, u64 n) { return sub_dm64(0, a, n); }
-u64 relaxed_add_dm64(u64 a, u64 b, u64 n2) { a += b - n2; a += n2 & -(a >> 63u); return a; }
-u64 relaxed_sub_dm64(u64 a, u64 b, u64 n2) { a -= b; a += n2 & -(a >> 63u); return a; }
-u64 relaxed_min_dm64(u64 a, u64 n2) { return relaxed_sub_dm64(0, a, n2); }
-u64 mul_dm64(u64 a, u64 b, u64 ni, u64 n) { return dmr64((u128)a * b, ni, n); }
-u64 squ_dm64(u64 a, u64 ni, u64 n) { return dmr64((u128)a * a, ni, n); }
-u64 shl_dm64(u64 a, u64 n) { return (a <<= 1) >= n ? a - n : a; }
-u64 shr_dm64(u64 a, u64 n) { return (a & 1) ? ((a >> 1) + (n >> 1) + 1) : (a >> 1); }
-u64 pow_dm64(u64 a, u64 k, u64 r1, u64 ni, u64 n) { u64 ret = r1; while (k > 0) { if (k & 1) ret = mul_dm64(ret, a, ni, n); a = squ_dm64(a, ni, n); k >>= 1; } return ret; }
-u64 inv_dm64(u64 a, u64 r3, u64 ni, u64 n) { return dmr64((u128)r3 * modinv64(a, n), ni, n); }
-u64 div_dm64(u64 a, u64 b, u64 r3, u64 ni, u64 n) { return mul_dm64(a, inv_dm64(b, r3, ni, n), ni, n); }
-#endif                // DM64
-
-#if defined(USE_M32)  // M32
-static u32 n_m32, n2_m32, ni_m32, r1_m32, r2_m32, r3_m32;
-static inline void set_m32(u32 mod) { if (mod == n_m32) return; n_m32 = mod; n2_m32 = mod << 1; ni_m32 = mod; for (int _ = 0; _ < 4; ++_) ni_m32 *= 2 - ni_m32 * mod; r1_m32 = (u32)(i32)-1 % mod + 1; r2_m32 = (u64)(i64)-1 % mod + 1; r3_m32 = (u32)(((u64)r1_m32 * (u64)r2_m32) % mod); }
-static inline u32 mr32(u64 a) { u32 y = (u32)(a >> 32) - (u32)(((u64)((u32)a * ni_m32) * n_m32) >> 32); return (i32)y < 0 ? y + n_m32 : y; }
-static inline u32 to_m32(u32 a) { return mr32((u64)a * r2_m32); }
-static inline u32 from_m32(u32 a) { return mr32((u64)a); }
-static inline u32 add_m32(u32 a, u32 b) { a += b; a -= (a >= n_m32 ? n_m32 : 0); return a; }
-static inline u32 sub_m32(u32 a, u32 b) { a += (a < b ? n_m32 : 0); a -= b; return a; }
-static inline u32 min_m32(u32 a) { return sub_m32(0, a); }
-static inline u32 relaxed_add_m32(u32 a, u32 b) { a += b - n2_m32; a += n2_m32 & -(a >> 31u); return a; }
-static inline u32 relaxed_sub_m32(u32 a, u32 b) { a -= b; a += n2_m32 & -(a >> 31u); return a; }
-static inline u32 relaxed_min_m32(u32 a) { return relaxed_sub_m32(0, a); }
-static inline u32 mul_m32(u32 a, u32 b) { return mr32((u64)a * b); }
-static inline u32 squ_m32(u32 a) { return mr32((u64)a * a); }
-static inline u32 shl_m32(u32 a) { return (a <<= 1) >= n_m32 ? a - n_m32 : a; }
-static inline u32 shr_m32(u32 a) { return (a & 1) ? ((a >> 1) + (n_m32 >> 1) + 1) : (a >> 1); }
-static inline u32 pow_m32(u32 a, u64 k) { u32 ret = r1_m32; while (k > 0) { if (k & 1) ret = mul_m32(ret, a); a = squ_m32(a); k >>= 1; } return ret; }
-static inline u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * modinv32(a, n_m32)); }
-static inline u32 div_m32(u32 a, u32 b) { return mul_m32(a, inv_m32(b)); }
-#endif                // M32
-
-#if defined(USE_M64)  // M64
-static u64 n_m64, n2_m64, ni_m64, r1_m64, r2_m64, r3_m64;
-static inline void set_m64(u64 mod) { if (mod == n_m64) return; n_m64 = mod; n2_m64 = mod << 1; ni_m64 = mod; for (int _ = 0; _ < 5; ++_) ni_m64 *= 2 - ni_m64 * mod; r1_m64 = (u64)(i64)-1 % mod + 1; r2_m64 = (u128)(i128)-1 % mod + 1; r3_m64 = (u64)(((u128)r1_m64 * (u128)r2_m64) % mod); }
-static inline u64 mr64(u128 a) { u64 y = (u64)(a >> 64) - (u64)(((u128)((u64)a * ni_m64) * n_m64) >> 64); return (i64)y < 0 ? y + n_m64 : y; }
-static inline u64 to_m64(u64 a) { return mr64((u128)a * r2_m64); }
-static inline u64 from_m64(u64 a) { return mr64((u128)a); }
-static inline u64 add_m64(u64 a, u64 b) { a += b; a -= (a >= n_m64 ? n_m64 : 0); return a; }
-static inline u64 sub_m64(u64 a, u64 b) { a += (a < b ? n_m64 : 0); a -= b; return a; }
-static inline u64 min_m64(u64 a) { return sub_m64(0, a); }
-static inline u64 relaxed_add_m64(u64 a, u64 b) { a += b - n2_m64; a += n2_m64 & -(a >> 63u); return a; }
-static inline u64 relaxed_sub_m64(u64 a, u64 b) { a -= b; a += n2_m64 & -(a >> 63u); return a; }
-static inline u64 relaxed_min_m64(u64 a) { return relaxed_sub_m64(0, a); }
-static inline u64 mul_m64(u64 a, u64 b) { return mr64((u128)a * b); }
-static inline u64 squ_m64(u64 a) { return mr64((u128)a * a); }
-static inline u64 shl_m64(u64 a) { return (a <<= 1) >= n_m64 ? a - n_m64 : a; }
-static inline u64 shr_m64(u64 a) { return (a & 1) ? ((a >> 1) + (n_m64 >> 1) + 1) : (a >> 1); }
-static inline u64 pow_m64(u64 a, u64 k) { u64 ret = r1_m64; while (k > 0) { if (k & 1) ret = mul_m64(ret, a); a = squ_m64(a); k >>= 1; } return ret; }
-static inline u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * modinv64(a, n_m64)); }
-static inline u64 div_m64(u64 a, u64 b) { return mul_m64(a, inv_m64(b)); }
-#endif                // M64
-
-#if defined(USE_B32)  // B32
-static u64 m_b32, m2_b32, im_b32, div_b32, rem_b32;
-void set_b32(u64 mod) { if (mod == m_b32) return; m_b32 = mod; m2_b32 = mod << 1; im_b32 = ((((u128)(1ull) << 64)) + mod - 1) / mod; div_b32 = 0; rem_b32 = 0; }
-static inline void br32(u64 a) { u64 x = (u64)(((u128)(a)*im_b32) >> 64); u64 y = x * m_b32; unsigned long long z; u32 w = __builtin_usubll_overflow(a, y, &z) ? m_b32 : 0; div_b32 = x; rem_b32 = z + w; }
-u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u32)m_b32 : 0); return a; }
-u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
-u32 min_b32(u32 a) { return sub_b32(0, a); }
-u32 relaxed_add_b32(u32 a, u32 b) { a += b - m2_b32; a += m2_b32 & -(a >> 31u); return a; }
-u32 relaxed_sub_b32(u32 a, u32 b) { a -= b; a += m2_b32 & -(a >> 31u); return a; }
-u32 relaxed_min_b32(u32 a) { return relaxed_sub_b32(0, a); }
-u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
-u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
-u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
-u32 shr_b32(u32 a) { return (a & 1) ? ((a >> 1) + (m_b32 >> 1) + 1) : (a >> 1); }
-u32 pow_b32(u32 a, u64 k) { u32 ret = 1u; while (k > 0) { if (k & 1) ret = mul_b32(ret, a); a = squ_b32(a); k >>= 1; } return ret; }
-#endif                // B32
-
-#if defined(USE_B64)  // B64
-static u128 m_b64, m2_b64, im_b64, div_b64, rem_b64;
-void set_b64(u128 mod) { if (mod == m_b64) return; m_b64 = mod; m2_b64 = mod << 1; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
-static inline void br64(u128 x) { if (m_b64 == 1) { div_b64 = x; rem_b64 = 0; return; } u8 f; u128 a = x >> 64; u128 b = x & 0xffffffffffffffffull; u128 c = im_b64 >> 64; u128 d = im_b64 & 0xffffffffffffffffull; u128 ac = a * c; u128 bd = (b * d) >> 64; u128 ad = a * d; u128 bc = b * c; f = (ad > ((u128)((i128)(-1L)) - bd)); bd += ad; ac += f; f = (bc > ((u128)((i128)(-1L)) - bd)); bd += bc; ac += f; u128 q = ac + (bd >> 64); u128 r = x - q * m_b64; if (m_b64 <= r) { r -= m_b64; q += 1; } div_b64 = q; rem_b64 = r; }
-u64 add_b64(u64 a, u64 b) { a += b; a -= (a >= (u64)m_b64 ? (u64)m_b64 : 0); return a; }
-u64 sub_b64(u64 a, u64 b) { a += (a < b ? (u64)m_b64 : 0); a -= b; return a; }
-u64 min_b64(u64 a) { return sub_b64(0, a); }
-u64 relaxed_add_b64(u64 a, u64 b) { a += b - m2_b64; a += m2_b64 & -(a >> 63u); return a; }
-u64 relaxed_sub_b64(u64 a, u64 b) { a -= b; a += m2_b64 & -(a >> 63u); return a; }
-u64 relaxed_min_b64(u64 a) { return relaxed_sub_b64(0, a); }
-u64 mul_b64(u64 a, u64 b) { br64((u128)a * b); return (u64)rem_b64; }
-u64 squ_b64(u64 a) { br64((u128)a * a); return (u64)rem_b64; }
-u64 shl_b64(u64 a) { return (a <<= 1) >= m_b64 ? a - m_b64 : a; }
-u64 shr_b64(u64 a) { return (a & 1) ? ((a >> 1) + (m_b64 >> 1) + 1) : (a >> 1); }
-u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull; while (k > 0) { if (k & 1) ret = mul_b64(ret, a); a = squ_b64(a); k >>= 1; } return ret; }
-#endif                // B64
-
-#if defined(USE_COMBSORT) // COMBSORT
-#define COMBSORT11(bit)                                                                         \
-    int g = a_len;                                                                              \
-    u##bit t;                                                                                   \
-    while (true) {                                                                              \
-        bool flag = 1;                                                                          \
-        g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1;                                        \
-        if (g == 9 || g == 10)                                                                  \
-            g = 11;                                                                             \
-        for (int i = 0; i + g < a_len; i++) {                                                   \
-            if (a[i] > a[i + g]) {                                                              \
-                t = a[i], a[i] = a[i + g], a[i + g] = t;                                        \
-                flag = false;                                                                   \
-            }                                                                                   \
-        }                                                                                       \
-        if (g == 1 && flag)                                                                     \
-            break;                                                                              \
-    }
-void combsort11_32(int a_len, u32 *a) { COMBSORT11(32) }
-void combsort11_64(int a_len, u64 *a) { COMBSORT11(64) }
-#undef COMBSORT11
-#endif                    // COMBSORT
-
-#if defined(USE_QUADRATIC_RESIDUE) // QUADRATIC_RESIDUE
-bool euler_criterion(u32 a, u32 mod) {
-#if defined(USE_M32)
-    return pow_m32(to_m32(a), (mod - 1) >> 1) == r1_m32;
-#elif defined(USE_B32)
-    return pow_b32(a, (mod - 1) >> 1) == 1;
-#else
-    u32 ret = 1, b = a, k = (mod - 1) >> 1;
-    while (k) {
-        if (k & 1)
-            ret = (u64)b * ret % mod;
-        b = (u64)b * b % mod;
-        k >>= 1;
-    }
-    return ret == 1;
+u32 gcd32(u32 a, u32 b) {
+    BGCD(32);
+}
+u64 gcd64(u64 a, u64 b) {
+    BGCD(64);
+}
+#undef BGCD
 #endif
-}
-int legendre_symbol(u32 a, u32 mod) {
-    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
-    int ret;
-#if defined(USE_M32)
-    if (mr32((u64)a) == 0)
-        ret = 0;
-#else
-    if (a == 0)
-        ret = 0;
-#endif
-    else if (euler_criterion(a, mod))
-        ret = 1;
-    else
-        ret = -1;
-    return ret;
-}
-int jacobi_symbol(long long a, long long n) {
-    int j = 1;
-    long long t;
-    while (a) {
-        if (a < 0) {
-            a = -a;
-            if ((n & 3) == 3)
-                j = -j;
-        }
-        int s = ctz64(a);
-        a >>= s;
-        if ((((n & 7) == 3) || ((n & 7) == 5)) && (s & 1))
-            j = -j;
-        if ((a & n & 3) == 3)
-            j = -j;
-        t = a, a = n, n = t;
-        a %= n;
-        if ((a << 1) > n)
-            a -= n;
-    }
-    return n == 1 ? j : 0;
-}
-#endif                             // QUADRATIC_RESIDUE
 
-#if defined(USE_POW_ROOT) // POW_ROOT
+#if defined(USE_POW_ROOT)
 #define IPOW(bit)                                                                               \
     u##bit p = 1;                                                                               \
     while (k) {                                                                                 \
@@ -689,44 +480,48 @@ int jacobi_symbol(long long a, long long n) {
         if (k)                                                                                  \
             n *= n;                                                                             \
     }                                                                                           \
-    return p
-u32 ipow32(u32 n, u64 k) { IPOW(32); }
-u64 ipow64(u64 n, u64 k) { IPOW(64); }
+    return p;
+u32 ipow_u32(u32 n, u64 k) {
+    IPOW(32);
+}
+u32 ipow_u32(u32 n, u64 k) {
+    IPOW(64);
+}
 #undef IPOW
-
 #define SPOW(bit)                                                                               \
-    if (y == 0)                                                                                 \
+    if (k == 0)                                                                                 \
         return 1;                                                                               \
-    u##bit res = 1;                                                                             \
-    while (y) {                                                                                 \
-        if (y & 1)                                                                              \
-            res = __builtin_mul_overflow_p(res, x, (u##bit)0) ? UINT##bit##_MAX : res * x;      \
-        x = __builtin_mul_overflow_p(x, x, (u##bit)0) ? UINT##bit##_MAX : x * x;                \
-        y >>= 1;                                                                                \
-    }                                                                                           \
-    return res
-
-u32 spow_u32(u32 x, u32 y) { SPOW(32); }
-u64 spow_u64(u64 x, u64 y) { SPOW(64); }
-#undef SPOW
-
-#define POWMOD(bit, wbit)                                                                       \
     u##bit res = 1;                                                                             \
     while (k) {                                                                                 \
         if (k & 1)                                                                              \
-            res = ((u##wbit)a * res) % mod;                                                     \
-        a = ((u##wbit)a * a) % mod;                                                             \
+            res = __builtin_mul_overflow_p(res, n, (u##bit)0) ? UINT##bit##_MAX : res * n;      \
+        n = __builtin_mul_overflow_p(n, n, (u##bit)0) ? UINT##bit##_MAX : n * n;                \
         k >>= 1;                                                                                \
     }                                                                                           \
     return res;
-u32 powmod_u32(u32 a, u64 k, u32 mod) {
+u32 spow_u32(u32 n, u32 k) {
+    SPOW(32);
+}
+u64 spow_u64(u64 n, u64 k) {
+    SPOW(64);
+}
+#undef SPOW
+#define POWMOD(word, dword)                                                                     \
+    u##word res = 1;                                                                            \
+    while (k) {                                                                                 \
+        if (k & 1)                                                                              \
+            res = ((u##dword)n * res) % mod;                                                    \
+        n = ((u##dword)n * n) % mod;                                                            \
+        k >>= 1;                                                                                \
+    }                                                                                           \
+    return res;
+u32 powmod_u32(u32 n, u64 k, u32 mod) {
     POWMOD(32, 64);
 }
-u64 powmod_u64(u64 a, u64 k, u64 mod) {
+u64 powmod_u64(u64 n, u64 k, u64 mod) {
     POWMOD(64, 128);
 }
 #undef POWMOD
-
 u64 isqrt(u64 n) {
     u64 root;
     if (n >= (u64)(18446744065119617025ull))
@@ -814,4 +609,321 @@ bool is_perfect_seventh(u64 n) {
     m = floor_kth_root_integer(n, 7);
     return m * m * m * m * m * m * m == n;
 }
-#endif                    // POW_ROOT
+#endif
+
+#if defined(USE_QUADRATIC_RESIDUE)
+bool euler_criterion_32(u32 a, u32 mod) {
+#if defined(USE_M32)
+    return pow_m32(to_m32(a), (mod - 1) >> 1) == r1_m32;
+#elif defined(USE_B32)
+    return pow_b32(a, (mod - 1) >> 1) == 1;
+#else
+    u32 ret = 1, b = a, k = (mod - 1) >> 1;
+    while (k) {
+        if (k & 1)
+            ret = (u64)b * ret % mod;
+        b = (u64)b * b % mod;
+        k >>= 1;
+    }
+    return ret == 1;
+#endif
+}
+bool euler_criterion_64(u64 a, u64 mod) {
+#if defined(USE_M64)
+    return pow_m64(to_m64(a), (mod - 1) >> 1) == r1_m64;
+#elif defined(USE_B64)
+    return pow_b64(a, (mod - 1) >> 1) == 1;
+#else
+    u64 ret = 1, b = a, k = (mod - 1) >> 1;
+    while (k) {
+        if (k & 1)
+            ret = (u128)b * ret % mod;
+        b = (u128)b * b % mod;
+        k >>= 1;
+    }
+    return ret == 1;
+#endif
+}
+int legendre_symbol_32(u32 a, u32 mod)  {
+    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
+    int ret;
+#if defined(USE_M32)
+    if (mr32((u64)a) == 0)
+        ret = 0;
+#else
+    if (a == 0)
+        ret = 0;
+#endif
+    else if (euler_criterion_32(a, mod))
+        ret = 1;
+    else
+        ret = -1;
+    return ret;
+}
+int legendre_symbol_64(u64 a, u64 mod) {
+    /* assert(a >= 0 && mod & 1 && is_prime(mod)); */
+    int ret;
+#if defined(USE_M64)
+    if (mr64((u128)a) == 0)
+        ret = 0;
+#else
+    if (a == 0)
+        ret = 0;
+#endif
+    else if (euler_criterion_64(a, mod))
+        ret = 1;
+    else
+        ret = -1;
+    return ret;
+}
+int jacobi_symbol(long long a, long long n) {
+    int j = 1;
+    long long t;
+    while (a) {
+        if (a < 0) {
+            a = -a;
+            if ((n & 3) == 3)
+                j = -j;
+        }
+        int s = ctz64(a);
+        a >>= s;
+        if ((((n & 7) == 3) || ((n & 7) == 5)) && (s & 1))
+            j = -j;
+        if ((a & n & 3) == 3)
+            j = -j;
+        t = a, a = n, n = t;
+        a %= n;
+        if ((a << 1) > n)
+            a -= n;
+    }
+    return n == 1 ? j : 0;
+}
+#endif
+
+#if defined(USE_COMBSORT11)
+#define COMBSORT11(type)                                                                        \
+    int g = a_len;                                                                              \
+    type t;                                                                                     \
+    while (true) {                                                                              \
+        bool flag = true;                                                                       \
+        g = (((g * 10) / 13) > 1) ? ((g * 10) / 13) : 1;                                        \
+        if (g == 9 || g == 10)                                                                  \
+            g = 11;                                                                             \
+        for (int i = 0; i + g < a_len; i++) {                                                   \
+            if (func(a[i], a[i + g])) {                                                         \
+                t = a[i], a[i] = a[i + g], a[i + g] = t;                                        \
+                flag = false;                                                                   \
+            }                                                                                   \
+        }                                                                                       \
+        if (g == 1 && flag)                                                                     \
+            break;                                                                              \
+    }
+
+void combsort11_i32(bool(*func)(i32, i32), int a_len, i32* a) {
+    COMBSORT11(i32);
+}
+void combsort11_i64(bool(*func)(i64, i64), int a_len, i64* a) {
+    COMBSORT11(i64);
+}
+void combsort11_u32(bool(*func)(u32, u32), int a_len, u32* a) {
+    COMBSORT11(u32);
+}
+void combsort11_u64(bool(*func)(u64, u64), int a_len, u64* a) {
+    COMBSORT11(u64);
+}
+void combsort11_Pair_i32(bool(*func)(Pair_i32, Pair_i32), int a_len, Pair_i32* a) {
+    COMBSORT11(Pair_i32);
+}
+void combsort11_Pair_i64(bool(*func)(Pair_i64, Pair_i64), int a_len, Pair_i64* a) {
+    COMBSORT11(Pair_i64);
+}
+void combsort11_Pair_u32(bool(*func)(Pair_u32, Pair_u32), int a_len, Pair_u32* a) {
+    COMBSORT11(Pair_u32);
+}
+void combsort11_Pair_u64(bool(*func)(Pair_u64, Pair_u64), int a_len, Pair_u64* a) {
+    COMBSORT11(Pair_u64);
+}
+#undef COMBSORT11
+#endif
+
+#if defined(USE_M32) || defined(USE_M64) || defined(USE_DM32) || defined(USE_DM64)
+typedef struct { i32 a, b; u32 d; } Bezout32;
+typedef struct { i64 a, b; u64 d; } Bezout64;
+#define BEZOUT(bit)                                                                             \
+    u##bit t;                                                                                   \
+    bool swap = x < y;                                                                          \
+    if (swap) t = x, x = y, y = t;                                                              \
+    if (y == 0)                                                                                 \
+    {                                                                                           \
+        if (x == 0)                                                                             \
+            return (Bezout##bit) {0, 0, 0};                                                     \
+        else if (swap)                                                                          \
+            return (Bezout##bit) {0, 1, x};                                                     \
+        else                                                                                    \
+            return (Bezout##bit) {1, 0, x};                                                     \
+    }                                                                                           \
+    i##bit s0 = 1, s1 = 0, t0 = 0, t1 = 1;                                                      \
+    while (true)                                                                                \
+    {                                                                                           \
+        u##bit q = x / y, r = x % y;                                                            \
+        if (r == 0)                                                                             \
+        {                                                                                       \
+            if (swap)                                                                           \
+                return (Bezout##bit) {t1, s1, y};                                               \
+            else                                                                                \
+                return (Bezout##bit) {s1, t1, y};                                               \
+        }                                                                                       \
+        i##bit s2 = s0 - (i##bit)(q) * s1, t2 = t0 - (i##bit)(q) * t1;                          \
+        x = y, y = r;                                                                           \
+        s0 = s1, s1 = s2, t0 = t1, t1 = t2;                                                     \
+    }
+static Bezout32 bezout32(u32 x, u32 y) { BEZOUT(32); }
+static Bezout64 bezout64(u64 x, u64 y) { BEZOUT(64); }
+#undef BEZOUT
+u32 modinv32(u32 x, u32 mod) {
+    Bezout32 abd = bezout32(x, mod);
+    return abd.a < 0 ? mod + abd.a : (u32)abd.a;
+}
+u64 modinv64(u64 x, u64 mod) {
+    Bezout64 abd = bezout64(x, mod);
+    return abd.a < 0 ? mod + abd.a : (u64)abd.a;
+}
+#endif
+
+#if defined(USE_M32)
+static u32 n_m32, n2_m32, ni_m32, r1_m32, r2_m32, r3_m32;
+void set_m32(u32 mod) { if (mod == n_m32) return; n_m32 = mod; n2_m32 = mod << 1; ni_m32 = mod; for (int _ = 0; _ < 4; ++_) ni_m32 *= 2 - ni_m32 * mod; r1_m32 = (u32)(i32)-1 % mod + 1; r2_m32 = (u64)(i64)-1 % mod + 1; r3_m32 = (u32)(((u64)r1_m32 * (u64)r2_m32) % mod); }
+static inline u32 mr32(u64 a) { u32 y = (u32)(a >> 32) - (u32)(((u64)((u32)a * ni_m32) * n_m32) >> 32); return (i32)y < 0 ? y + n_m32 : y; }
+u32 to_m32(u32 a) { return mr32((u64)a * r2_m32); }
+u32 from_m32(u32 a) { return mr32((u64)a); }
+u32 add_m32(u32 a, u32 b) { a += b; a -= (a >= n_m32 ? n_m32 : 0); return a; }
+u32 sub_m32(u32 a, u32 b) { a += (a < b ? n_m32 : 0); a -= b; return a; }
+u32 min_m32(u32 a) { return sub_m32(0, a); }
+u32 relaxed_add_m32(u32 a, u32 b) { a += b - n2_m32; a += n2_m32 & -(a >> 31u); return a; }
+u32 relaxed_sub_m32(u32 a, u32 b) { a -= b; a += n2_m32 & -(a >> 31u); return a; }
+u32 relaxed_min_m32(u32 a) { return relaxed_sub_m32(0, a); }
+u32 mul_m32(u32 a, u32 b) { return mr32((u64)a * b); }
+u32 squ_m32(u32 a) { return mr32((u64)a * a); }
+u32 shl_m32(u32 a) { return (a <<= 1) >= n_m32 ? a - n_m32 : a; }
+u32 shr_m32(u32 a) { return (a & 1) ? ((a >> 1) + (n_m32 >> 1) + 1) : (a >> 1); }
+u32 pow_m32(u32 a, u64 k) { u32 ret = r1_m32; while (k > 0) { if (k & 1) ret = mul_m32(ret, a); a = squ_m32(a); k >>= 1; } return ret; }
+u32 inv_m32(u32 a) { return mr32((u64)r3_m32 * modinv32(a, n_m32)); }
+u32 div_m32(u32 a, u32 b) { return mul_m32(a, inv_m32(b)); }
+#endif
+
+#if defined(USE_M64)
+static u64 n_m64, n2_m64, ni_m64, r1_m64, r2_m64, r3_m64;
+void set_m64(u64 mod) { if (mod == n_m64) return; n_m64 = mod; n2_m64 = mod << 1; ni_m64 = mod; for (int _ = 0; _ < 5; ++_) ni_m64 *= 2 - ni_m64 * mod; r1_m64 = (u64)(i64)-1 % mod + 1; r2_m64 = (u128)(i128)-1 % mod + 1; r3_m64 = (u64)(((u128)r1_m64 * (u128)r2_m64) % mod); }
+static inline u64 mr64(u128 a) { u64 y = (u64)(a >> 64) - (u64)(((u128)((u64)a * ni_m64) * n_m64) >> 64); return (i64)y < 0 ? y + n_m64 : y; }
+u64 to_m64(u64 a) { return mr64((u128)a * r2_m64); }
+u64 from_m64(u64 a) { return mr64((u128)a); }
+u64 add_m64(u64 a, u64 b) { a += b; a -= (a >= n_m64 ? n_m64 : 0); return a; }
+u64 sub_m64(u64 a, u64 b) { a += (a < b ? n_m64 : 0); a -= b; return a; }
+u64 min_m64(u64 a) { return sub_m64(0, a); }
+u64 relaxed_add_m64(u64 a, u64 b) { a += b - n2_m64; a += n2_m64 & -(a >> 63u); return a; }
+u64 relaxed_sub_m64(u64 a, u64 b) { a -= b; a += n2_m64 & -(a >> 63u); return a; }
+u64 relaxed_min_m64(u64 a) { return relaxed_sub_m64(0, a); }
+u64 mul_m64(u64 a, u64 b) { return mr64((u128)a * b); }
+u64 squ_m64(u64 a) { return mr64((u128)a * a); }
+u64 shl_m64(u64 a) { return (a <<= 1) >= n_m64 ? a - n_m64 : a; }
+u64 shr_m64(u64 a) { return (a & 1) ? ((a >> 1) + (n_m64 >> 1) + 1) : (a >> 1); }
+u64 pow_m64(u64 a, u64 k) { u64 ret = r1_m64; while (k > 0) { if (k & 1) ret = mul_m64(ret, a); a = squ_m64(a); k >>= 1; } return ret; }
+u64 inv_m64(u64 a) { return mr64((u128)r3_m64 * modinv64(a, n_m64)); }
+u64 div_m64(u64 a, u64 b) { return mul_m64(a, inv_m64(b)); }
+#endif
+
+#if defined(USE_B32)
+static u64 m_b32, m2_b32, im_b32, div_b32, rem_b32;
+void set_b32(u64 mod) { if (mod == m_b32) return; m_b32 = mod; m2_b32 = mod << 1; im_b32 = ((((u128)(1ull) << 64)) + mod - 1) / mod; div_b32 = 0; rem_b32 = 0; }
+static inline void br32(u64 a) {
+    u64 x = (u64)(((u128)(a) * im_b32) >> 64);
+    u64 y = x * m_b32;
+    unsigned long long z;
+#if defined(__GNUC__)
+    u32 w = __builtin_usubll_overflow(a, y, &z) ? m_b32 : 0;
+#else
+    z = a - y;
+    u32 w = a < y ? m_b32 : 0;
+#endif
+    div_b32 = x;
+    rem_b32 = z + w;
+}
+u32 add_b32(u32 a, u32 b) { a += b; a -= (a >= (u32)m_b32 ? (u32)m_b32 : 0); return a; }
+u32 sub_b32(u32 a, u32 b) { a += (a < b ? (u32)m_b32 : 0); a -= b; return a; }
+u32 min_b32(u32 a) { return sub_b32(0, a); }
+u32 relaxed_add_b32(u32 a, u32 b) { a += b - m2_b32; a += m2_b32 & -(a >> 31u); return a; }
+u32 relaxed_sub_b32(u32 a, u32 b) { a -= b; a += m2_b32 & -(a >> 31u); return a; }
+u32 relaxed_min_b32(u32 a) { return relaxed_sub_b32(0, a); }
+u32 mul_b32(u32 a, u32 b) { br32((u64)a * b); return (u32)rem_b32; }
+u32 squ_b32(u32 a) { br32((u64)a * a); return (u32)rem_b32; }
+u32 shl_b32(u32 a) { return (a <<= 1) >= m_b32 ? a - m_b32 : a; }
+u32 shr_b32(u32 a) { return (a & 1) ? ((a >> 1) + (m_b32 >> 1) + 1) : (a >> 1); }
+u32 pow_b32(u32 a, u64 k) { u32 ret = 1u; while (k > 0) { if (k & 1) ret = mul_b32(ret, a); a = squ_b32(a); k >>= 1; } return ret; }
+#endif
+
+#if defined(USE_B64)
+static u128 m_b64, m2_b64, im_b64, div_b64, rem_b64;
+void set_b64(u128 mod) { if (mod == m_b64) return; m_b64 = mod; m2_b64 = mod << 1; im_b64 = (~((u128)0ull)) / mod; div_b64 = 0; rem_b64 = 0; }
+static inline void br64(u128 x) { if (m_b64 == 1) { div_b64 = x; rem_b64 = 0; return; } u8 f; u128 a = x >> 64; u128 b = x & 0xffffffffffffffffull; u128 c = im_b64 >> 64; u128 d = im_b64 & 0xffffffffffffffffull; u128 ac = a * c; u128 bd = (b * d) >> 64; u128 ad = a * d; u128 bc = b * c; f = (ad > ((u128)((i128)(-1L)) - bd)); bd += ad; ac += f; f = (bc > ((u128)((i128)(-1L)) - bd)); bd += bc; ac += f; u128 q = ac + (bd >> 64); u128 r = x - q * m_b64; if (m_b64 <= r) { r -= m_b64; q += 1; } div_b64 = q; rem_b64 = r; }
+u64 add_b64(u64 a, u64 b) { a += b; a -= (a >= (u64)m_b64 ? (u64)m_b64 : 0); return a; }
+u64 sub_b64(u64 a, u64 b) { a += (a < b ? (u64)m_b64 : 0); a -= b; return a; }
+u64 min_b64(u64 a) { return sub_b64(0, a); }
+u64 relaxed_add_b64(u64 a, u64 b) { a += b - m2_b64; a += m2_b64 & -(a >> 63u); return a; }
+u64 relaxed_sub_b64(u64 a, u64 b) { a -= b; a += m2_b64 & -(a >> 63u); return a; }
+u64 relaxed_min_b64(u64 a) { return relaxed_sub_b64(0, a); }
+u64 mul_b64(u64 a, u64 b) { br64((u128)a * b); return (u64)rem_b64; }
+u64 squ_b64(u64 a) { br64((u128)a * a); return (u64)rem_b64; }
+u64 shl_b64(u64 a) { return (a <<= 1) >= m_b64 ? a - m_b64 : a; }
+u64 shr_b64(u64 a) { return (a & 1) ? ((a >> 1) + (m_b64 >> 1) + 1) : (a >> 1); }
+u64 pow_b64(u64 a, u64 k) { u64 ret = 1ull; while (k > 0) { if (k & 1) ret = mul_b64(ret, a); a = squ_b64(a); k >>= 1; } return ret; }
+#endif
+
+#if defined(USE_DM32)
+u32 r1_dm32(u32 mod) { return (u32)(i32)-1 % mod + 1; }
+u32 r2_dm32(u32 mod) { return (u64)(i64)-1 % mod + 1; }
+u32 r3_dm32(u32 mod, u32 r1, u32 r2) { return (u32)(((u64)r1 * (u64)r2) % mod); }
+u32 n_dm32(u32 mod) { return mod; }
+u32 ni_dm32(u32 mod) { u32 ni = mod; for (int _ = 0; _ < 4; ++_) ni *= 2 - ni * mod; return ni; }
+u32 n2_dm32(u32 mod) { return mod << 1; }
+u32 dmr32(u64 a, u32 ni, u32 n) { u32 y = (u32)(a >> 32) - (u32)(((u64)((u32)a * ni) * n) >> 32); return (i32)y < 0 ? y + n : y; }
+u32 to_dm32(u32 a, u32 r2, u32 ni, u32 n) { return dmr32((u64)a * r2, ni, n); }
+u32 from_dm32(u32 a, u32 ni, u32 n) { return dmr32((u64)a, ni, n); }
+u32 add_dm32(u32 a, u32 b, u32 n) { a += b; a -= (a >= n ? n : 0); return a; }
+u32 sub_dm32(u32 a, u32 b, u32 n) { a += (a < b ? n : 0); a -= b; return a; }
+u32 min_dm32(u32 a, u32 n) { return sub_dm32(0, a, n); }
+u32 relaxed_add_dm32(u32 a, u32 b, u32 n2) { a += b - n2; a += n2 & -(a >> 31u); return a; }
+u32 relaxed_sub_dm32(u32 a, u32 b, u32 n2) { a -= b; a += n2 & -(a >> 31u); return a; }
+u32 relaxed_min_dm32(u32 a, u32 n2) { return relaxed_sub_dm32(0, a, n2); }
+u32 mul_dm32(u32 a, u32 b, u32 ni, u32 n) { return dmr32((u64)a * b, ni, n); }
+u32 squ_dm32(u32 a, u32 ni, u32 n) { return dmr32((u64)a * a, ni, n); }
+u32 shl_dm32(u32 a, u32 n) { return (a <<= 1) >= n ? a - n : a; }
+u32 shr_dm32(u32 a, u32 n) { return (a & 1) ? ((a >> 1) + (n >> 1) + 1) : (a >> 1); }
+u32 pow_dm32(u32 a, u64 k, u32 r1, u32 ni, u32 n) { u32 ret = r1; while (k > 0) { if (k & 1) ret = mul_dm32(ret, a, ni, n); a = squ_dm32(a, ni, n); k >>= 1; } return ret; }
+u32 inv_dm32(u32 a, u32 r3, u32 ni, u32 n) { return dmr32((u64)r3 * modinv32(a, n), ni, n); }
+u32 div_dm32(u32 a, u32 b, u32 r3, u32 ni, u32 n) { return mul_dm32(a, inv_dm32(b, r3, ni, n), ni, n); }
+#endif
+
+#if defined(USE_DM64)
+u64 r1_dm64(u64 mod) { return (u64)(i64)-1 % mod + 1; }
+u64 r2_dm64(u64 mod) { return (u128)(i128)-1 % mod + 1; }
+u64 r3_dm64(u64 mod, u64 r1, u64 r2) { return (u64)(((u128)r1 * (u128)r2) % mod); }
+u64 n_dm64(u64 mod) { return mod; }
+u64 n2_dm64(u64 mod) { return mod << 1; }
+u64 ni_dm64(u64 mod) { u64 ni = mod; for (int _ = 0; _ < 5; ++_) ni *= 2 - ni * mod; return ni; }
+u64 dmr64(u128 a, u64 ni, u64 n) { u64 y = (u64)(a >> 64) - (u64)(((u128)((u64)a * ni) * n) >> 64); return (i64)y < 0 ? y + n : y; }
+u64 to_dm64(u64 a, u64 r2, u64 ni, u64 n) { return dmr64((u128)a * r2, ni, n); }
+u64 from_dm64(u64 a, u64 ni, u64 n) { return dmr64((u128)a, ni, n); }
+u64 add_dm64(u64 a, u64 b, u64 n) { a += b; a -= (a >= n ? n : 0); return a; }
+u64 sub_dm64(u64 a, u64 b, u64 n) { a += (a < b ? n : 0); a -= b; return a; }
+u64 min_dm64(u64 a, u64 n) { return sub_dm64(0, a, n); }
+u64 relaxed_add_dm64(u64 a, u64 b, u64 n2) { a += b - n2; a += n2 & -(a >> 63u); return a; }
+u64 relaxed_sub_dm64(u64 a, u64 b, u64 n2) { a -= b; a += n2 & -(a >> 63u); return a; }
+u64 relaxed_min_dm64(u64 a, u64 n2) { return relaxed_sub_dm64(0, a, n2); }
+u64 mul_dm64(u64 a, u64 b, u64 ni, u64 n) { return dmr64((u128)a * b, ni, n); }
+u64 squ_dm64(u64 a, u64 ni, u64 n) { return dmr64((u128)a * a, ni, n); }
+u64 shl_dm64(u64 a, u64 n) { return (a <<= 1) >= n ? a - n : a; }
+u64 shr_dm64(u64 a, u64 n) { return (a & 1) ? ((a >> 1) + (n >> 1) + 1) : (a >> 1); }
+u64 pow_dm64(u64 a, u64 k, u64 r1, u64 ni, u64 n) { u64 ret = r1; while (k > 0) { if (k & 1) ret = mul_dm64(ret, a, ni, n); a = squ_dm64(a, ni, n); k >>= 1; } return ret; }
+u64 inv_dm64(u64 a, u64 r3, u64 ni, u64 n) { return dmr64((u128)r3 * modinv64(a, n), ni, n); }
+u64 div_dm64(u64 a, u64 b, u64 r3, u64 ni, u64 n) { return mul_dm64(a, inv_dm64(b, r3, ni, n), ni, n); }
+#endif
