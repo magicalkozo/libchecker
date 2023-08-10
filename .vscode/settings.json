@@ -3,7 +3,7 @@
     "editor.fontFamily": "UDEV Gothic 35NFLG",
     "terminal.integrated.fontFamily": "PlemolJP Console",
     "editor.fontLigatures": true,
-    "workbench.colorTheme": "Tokyo Night Storm",
+    "workbench.colorTheme": "Ice",
     "editor.cursorBlinking": "smooth",
     "editor.cursorSmoothCaretAnimation": "explicit",
     "editor.renderLineHighlight": "gutter",
