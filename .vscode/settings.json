@@ -10,12 +10,12 @@
     "editor.renderLineHighlightOnlyWhenFocus": true,
     "editor.bracketPairColorization.enabled": true,
     "workbench.colorCustomizations": {
-        "editorBracketHighlight.foreground1": "#FF0000",
-        "editorBracketHighlight.foreground2": "#FFBF3F",
-        "editorBracketHighlight.foreground3": "#FFFF00",
-        "editorBracketHighlight.foreground4": "#3FFF3F",
-        "editorBracketHighlight.foreground5": "#3F7FFF",
-        "editorBracketHighlight.foreground6": "#FF7FFF"
+        "editorBracketHighlight.foreground1": "#FF5555",
+        "editorBracketHighlight.foreground2": "#FFB86C",
+        "editorBracketHighlight.foreground3": "#F1FA8C",
+        "editorBracketHighlight.foreground4": "#50FA7B",
+        "editorBracketHighlight.foreground5": "#8BE9FD",
+        "editorBracketHighlight.foreground6": "#BD93F9",
     },
     "C_Cpp.default.cppStandard": "c++20",
     "C_Cpp.default.cStandard": "gnu17",
