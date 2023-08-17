@@ -1,6 +1,6 @@
 // #define ONLINE
 #define OFFLINE
-#define USE_RNGs
+#define USE_RNGS
 #define USE_GCD
 #define USE_POW_ROOT
 #define USE_QUADRATIC_RESIDUE
@@ -429,7 +429,7 @@ __attribute__((destructor)) void _destruct_write_(void) {
 
 #endif
 
-#if defined(USE_RNGs)
+#if defined(USE_RNGS)
 #if defined(ONLINE)
 u32 rand_32(void) { static u64 lcg_state = 14534622846793005ull; lcg_state = 6364136223846793005ull * lcg_state + 1442695040888963407ull; return (u32)lcg_state; }
 u32 randrange_32(u32 l, u32 r) { return l + rand_32() % (r - l + 1); }
