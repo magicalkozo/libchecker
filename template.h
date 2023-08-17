@@ -604,26 +604,18 @@ bool max_sort_i32(i32 x, i32 y) { return x < y; }
 bool max_sort_i64(i64 x, i64 y) { return x < y; }
 bool max_sort_u32(u32 x, u32 y) { return x < y; }
 bool max_sort_u64(u64 x, u64 y) { return x < y; }
-bool max_sort_fst_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.a < y.a; }
-bool max_sort_fst_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.a < y.a; }
-bool max_sort_fst_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.a < y.a; }
-bool max_sort_fst_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.a < y.a; }
-bool max_sort_snd_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.b < y.b; }
-bool max_sort_snd_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.b < y.b; }
-bool max_sort_snd_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.b < y.b; }
-bool max_sort_snd_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.b < y.b; }
+bool max_sort_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.a == y.a ? x.b < y.b : x.a < y.a; }
+bool max_sort_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.a == y.a ? x.b < y.b : x.a < y.a; }
+bool max_sort_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.a == y.a ? x.b < y.b : x.a < y.a; }
+bool max_sort_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.a == y.a ? x.b < y.b : x.a < y.a; }
 bool min_sort_i32(i32 x, i32 y) { return x > y; }
 bool min_sort_i64(i64 x, i64 y) { return x > y; }
 bool min_sort_u32(u32 x, u32 y) { return x > y; }
 bool min_sort_u64(u64 x, u64 y) { return x > y; }
-bool min_sort_fst_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.a > y.a; }
-bool min_sort_fst_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.a > y.a; }
-bool min_sort_fst_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.a > y.a; }
-bool min_sort_fst_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.a > y.a; }
-bool min_sort_snd_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.b > y.b; }
-bool min_sort_snd_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.b > y.b; }
-bool min_sort_snd_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.b > y.b; }
-bool min_sort_snd_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.b > y.b; }
+bool min_sort_Pair_i32(Pair_i32 x, Pair_i32 y) { return x.a == y.a ? x.b > y.b : x.a > y.a ; }
+bool min_sort_Pair_i64(Pair_i64 x, Pair_i64 y) { return x.a == y.a ? x.b > y.b : x.a > y.a ; }
+bool min_sort_Pair_u32(Pair_u32 x, Pair_u32 y) { return x.a == y.a ? x.b > y.b : x.a > y.a ; }
+bool min_sort_Pair_u64(Pair_u64 x, Pair_u64 y) { return x.a == y.a ? x.b > y.b : x.a > y.a ; }
 #define COMBSORT11(type)                                                                        \
     int g = a_len;                                                                              \
     type t;                                                                                     \
