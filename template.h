@@ -182,7 +182,7 @@ void printb_64bit(u64 v) { OUTPUT_BINARY(64); }
 
 #if defined(ONLINE)
 
-static char *input;
+static char *input_data;
 static size_t input_size, input_string_size;
 
 __attribute__((constructor)) void _construct_read_(void) {
@@ -190,20 +190,20 @@ __attribute__((constructor)) void _construct_read_(void) {
     fstat(0, &st);
     input_string_size = st.st_size - 1;
     input_size = st.st_size + 1;
-    input = (char *)mmap(0, input_size, PROT_READ, MAP_SHARED | MAP_POPULATE, 0, 0);
-    if (input == MAP_FAILED)
+    input_data = (char *)mmap(0, input_size, PROT_READ, MAP_SHARED | MAP_POPULATE, 0, 0);
+    if (input_data == MAP_FAILED)
         __builtin_trap();
-    madvise(input, input_size, MADV_SEQUENTIAL);
+    madvise(input_data, input_size, MADV_SEQUENTIAL);
 }
 
 
 #define READ_SKIP                                                                               \
-    char c = *input;                                                                            \
+    char c = *input_data;                                                                       \
     if (c < '!')                                                                                \
-        *input++, c = *input;
+        *input_data++, c = *input_data;
 
 #define READ_CHAR_TO_INTEGER                                                                    \
-    for (*x = *input++ & 15; (c = *input++) >= '0';)                                            \
+    for (*x = *input_data++ & 15; (c = *input_data++) >= '0';)                                  \
         *x = *x * 10 + (c & 15);
 
 #define READ_UNSIGNED                                                                           \
@@ -215,7 +215,7 @@ __attribute__((constructor)) void _construct_read_(void) {
     bool flag = false;                                                                          \
     if (c == '-') {                                                                             \
         flag = true;                                                                            \
-        *input++;                                                                               \
+        *input_data++;                                                                          \
     }                                                                                           \
     READ_CHAR_TO_INTEGER                                                                        \
     *x = flag ? (*x) * (-1) : *x;
@@ -239,7 +239,7 @@ void rd_u128(u128 *x) { READ_UNSIGNED }
 
 
 __attribute__((destructor)) void _destruct_read_(void) {
-    munmap(input, input_size);
+    munmap(input_data, input_size);
     input_size = input_string_size = 0;
 }
 
