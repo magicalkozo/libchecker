@@ -1,7 +1,7 @@
 {
     "editor.fontSize": 20,
     "editor.fontFamily": "UDEV Gothic 35NFLG",
-    "terminal.integrated.fontFamily": "PlemolJP Console",
+    "terminal.integrated.fontFamily": "PlemolJP35 Console NF",
     "editor.fontLigatures": true,
     "workbench.colorTheme": "Ice",
     "editor.cursorBlinking": "smooth",
